@@ -1,5 +1,4 @@
 (* TODO have tests before further adding functionality - see: https://github.com/aantron/dream/issues/83 *)
-(* TODO implement joining to multiple channels *)
 type topic =
   | Topic of string
   | WithSubtopic of (string * string)
@@ -43,7 +42,7 @@ let disconnect client_id = Hashtbl.remove clients client_id
 
 let clients_per_topic = Hashtbl.create (module String)
 
-let log = Dream.sub_log "websockets"
+let log = Dream.sub_log "dream.channels"
 
 (* join|topic|payload *)
 (* send|topic|payload *)
