@@ -12,9 +12,9 @@ let chat_channel functions topic =
               [ `Stop "invalid topic" ] |> Lwt.return )
     ; handle_message =
         (fun (Payload payload) ->
-          match payload with
-          | "broadcast" ->
-              let%lwt () = functions.broadcast "To everyone" in
+          match (topic, payload) with
+          | WithSubtopic ("chat", chat_id), "broadcast" ->
+              let%lwt () = functions.broadcast ("To everyone in " ^ chat_id) in
               [] |> Lwt.return
           | _ ->
               [] |> Lwt.return )

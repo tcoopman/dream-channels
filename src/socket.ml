@@ -123,23 +123,25 @@ let channels topics client =
     | _ ->
         Lwt.return_unit
   in
-  let rec listen_on_topic callbacks =
+  let rec loop () =
     match%lwt receive_and_parse () with
     | Error _ ->
         Lwt.return_unit
-    | Ok (Send, _topic, payload) ->
-        let%lwt answers = callbacks.handle_message payload in
-        let%lwt () = process_answers answers in
-        listen_on_topic callbacks
-    | Ok (Join, _topic, _payload) ->
-        Lwt.return_unit
-  in
-  let listen_not_joined () =
-    match%lwt receive_and_parse () with
-    | Error _ ->
-        Lwt.return_unit
-    | Ok (Send, _topic, _payload) ->
-        Lwt.return_unit
+    | Ok (Send, topic, payload) ->
+        let callbacks =
+          Hashtbl.find_multi clients_per_topic topic
+          |> List.find_map ~f:(fun (c_id, _client, callbacks) ->
+                 if Int.equal client_id c_id then Some callbacks else None )
+        in
+        ( match callbacks with
+        | Some callbacks ->
+            let%lwt answers = callbacks.handle_message payload in
+            let%lwt () = process_answers answers in
+            loop ()
+        | None ->
+            let%lwt () = send client client_id "You tried to send to a channel, but you were not joined" in
+            log.error (fun log -> log "tried to send but not joined") ;
+            loop ())
     | Ok (Join, topic, payload) ->
         let topic_and_channel =
           parse_topic topic
@@ -150,31 +152,31 @@ let channels topics client =
         in
         ( match topic_and_channel with
         | Ok (parsed_topic, channel) ->
-            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client) ;
             let functions =
               { push = send client client_id
               ; broadcast =
                   (fun payload ->
                     let string_topic = topic in
                     Hashtbl.find_multi clients_per_topic string_topic
-                    |> Lwt_list.iter_p (fun (c_id, c) -> send c c_id payload) )
+                    |> Lwt_list.iter_p (fun (c_id, c, _callbacks) -> send c c_id payload) )
               ; broadcast_from =
                   (fun payload ->
                     let string_topic = topic in
                     Hashtbl.find_multi clients_per_topic string_topic
-                    |> Lwt_list.iter_p (fun (c_id, c) ->
+                    |> Lwt_list.iter_p (fun (c_id, c, _callbacks) ->
                            if not (Int.equal client_id c_id)
                            then send c c_id payload
                            else Lwt.return_unit ) )
               }
             in
             let callbacks = channel functions parsed_topic in
+            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client, callbacks) ;
             let%lwt answers = callbacks.join payload in
             let%lwt () = process_answers answers in
-            listen_on_topic callbacks
+            loop ()
         | Error _error ->
             Lwt.return_unit )
   in
 
   log.info (fun log -> log "Listening") ;
-  listen_not_joined ()
+  loop ()
