@@ -1,0 +1,9 @@
+(env
+ (dev
+  (flags
+   (:standard -safe-string -w -30)))
+ (release
+  (flags
+   (:standard -safe-string -O3))))
+
+(data_only_dirs _esy esy.lock node_modules)

@@ -1,0 +1,5 @@
+(library
+ (public_name channels)
+ (libraries dream base)
+ (preprocess
+  (pps lwt_ppx)))

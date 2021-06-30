@@ -1,0 +1,42 @@
+{
+  "name": "board-games",
+  "version": "0.1.0",
+  "description": "Board Games",
+  "license": "MIT",
+  "esy": {
+    "buildsInSource": "unsafe",
+    "NOTE": "Optional release Section. Customizes result of `esy release`",
+    "release": { "bin": [ "App" ] },
+    "buildEnv": { "ODOC_SYNTAX": "re" }
+  },
+  "scripts": {
+    "bin": "esy b dune exec bin/server.bc",
+    "bin-exe": "esy b dune exec bin/server.exe",
+    "run-migrate": "esy b dune exec bin/migrate.exe",
+    "run-atd": "esy b dune build atd",
+    "doc": "esy dune build @doc",
+    "test": "esy dune runtest"
+  },
+  "dependencies": {
+    "@opam/base": "v0.14.1",
+    "@opam/dream": "1.0.0~alpha2",
+    "@opam/dune": "^2.8",
+    "@opam/lwt": ">= 5.3.0 < 6.0.0",
+    "@opam/lwt_ppx": ">= 2.0.0 < 3.0.0",
+    "@opam/ppx_expect": "v0.14.1",
+    "ocaml": "4.12.x"
+  },
+  "devDependencies": {
+    "@opam/ocaml-print-intf": "1.2.0",
+    "@opam/merlin": "*",
+    "@opam/ocaml-lsp-server": "*",
+    "@opam/ocamlfind-secondary": "*",
+    "@opam/ocamlformat": "0.18.0",
+    "@opam/odoc": "*",
+    "@opam/utop": "*"
+  },
+  "resolutions": {
+    "@opam/conf-libev":
+      "esy-packages/libev:package.json#0b5eb6685b688649045aceac55dc559f6f21b829"
+  }
+}

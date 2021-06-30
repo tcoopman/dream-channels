@@ -1,0 +1,9 @@
+(executable
+ (name integration)
+ (libraries
+  dream
+  lwt
+  channels
+ )
+ (preprocess
+  (pps lwt_ppx)))

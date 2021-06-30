@@ -1,0 +1,4 @@
+profile = sparse
+margin = 100
+parse-docstrings = true
+break-string-literals = never
