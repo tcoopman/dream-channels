@@ -9,7 +9,8 @@ ws.on('open', function open() {
 
 ws.on('message', function incoming(data) {
   expect(data).toBe("joined:1|payload:hi");
-  done()
+  ws.terminate();
+  done();
 });
 
 });
