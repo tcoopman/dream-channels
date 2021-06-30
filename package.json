@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "server": "esy x dune exec --root . test/integration/integration.exe",
+    "test": "jest"
+  },
+  "dependencies": {
+    "ws": "^7.5.1"
+  },
+  "devDependencies": {
+    "jest": "^27.0.6"
+  }
+}

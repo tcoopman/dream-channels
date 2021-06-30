@@ -3,8 +3,8 @@ open Channels
 let chat_channel functions topic = Socket.{
   join = (fun (Payload payload) ->
     match topic with
-    | WithSubtopic ("chat", _chat_id) ->
-        let%lwt () = functions.broadcast @@ "Hi there with: " ^ payload in
+    | WithSubtopic ("chat", chat_id) ->
+        let%lwt () = functions.push @@ "joined:" ^ chat_id ^ "|payload:" ^ payload in
         [] |> Lwt.return
     | _ -> [`Stop "invalid topic"] |> Lwt.return);
   handle_message= (fun (Payload payload) -> 
@@ -15,7 +15,7 @@ let chat_channel functions topic = Socket.{
 
 let () =
   Dream.initialize_log ~level:`Debug ();
-  Dream.run
+  Dream.run ~interface:"0.0.0.0"
   @@ Dream.logger
   @@ Dream.router [
 
