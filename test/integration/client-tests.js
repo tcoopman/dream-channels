@@ -89,3 +89,11 @@ test('I cannot send to channel that I did not join', (done) => {
     }
   });
 });
+
+test.todo('works with multiple sockets')
+test.todo('keeps working when clients terminate')
+test.todo('test broadcast_from')
+test.todo('test handle_out')
+test.todo('add authentication on a socket')
+test.todo('heartbeat')
+test.todo('reconnecting')
