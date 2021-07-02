@@ -1,4 +1,3 @@
-(* TODO have tests before further adding functionality - see: https://github.com/aantron/dream/issues/83 *)
 type topic =
   | Topic of string
   | WithSubtopic of (string * string)
@@ -19,11 +18,18 @@ type functions =
   ; broadcast_from : string -> unit Lwt.t
   }
 
-type channel = functions -> topic -> callbacks
+type intercept = payload -> bool
 
 and callbacks =
-  { join : payload -> answers
-  ; handle_message : payload -> answers
+  { join : functions -> payload -> answers
+  ; handle_message : functions -> payload -> answers
+  ; handle_out : payload -> payload
+  }
+
+type channel =
+  { topic : string
+  ; intercept : intercept
+  ; create_callbacks : topic -> callbacks
   }
 
 open Base
@@ -131,15 +137,15 @@ let send client client_id payload =
       Lwt.return_unit
 
 
-let channels topics client =
+let channels channels client =
   let find_channel topic =
     let expected_topic =
       match topic with Topic topic -> topic | WithSubtopic (topic, _subtopic) -> topic ^ ":*"
     in
     List.find_map
-      ~f:(fun (expected_route, channel) ->
-        if String.equal expected_route expected_topic then Some channel else None )
-      topics
+      ~f:(fun ({ topic; _ } as channel) ->
+        if String.equal topic expected_topic then Some channel else None )
+      channels
   in
   let client_id = Clients.connect client in
   let receive_and_parse () =
@@ -164,7 +170,7 @@ let channels topics client =
     | _ ->
         Lwt.return_unit
   in
-  let rec loop () =
+  let rec loop functions =
     match%lwt receive_and_parse () with
     | Error e ->
         log.debug (fun log -> log "Closing %i - error %s" client_id e) ;
@@ -172,17 +178,19 @@ let channels topics client =
         Dream.close_websocket client
     | Ok (Send, topic, payload) ->
         let callbacks = Clients.callbacks client_id topic in
-        ( match callbacks with
-        | Some callbacks ->
-            let%lwt answers = callbacks.handle_message payload in
-            let%lwt () = process_answers answers in
-            loop ()
-        | None ->
-            let%lwt () =
+        let%lwt () =
+          match (functions, callbacks) with
+          | Some functions, Some callbacks ->
+              let%lwt answers = callbacks.handle_message functions payload in
+              process_answers answers
+          | _, None ->
+              log.error (fun log -> log "tried to send but not joined") ;
               send client client_id "You tried to send to a channel, but you were not joined"
-            in
-            log.error (fun log -> log "tried to send but not joined") ;
-            loop () )
+          | None, Some _ ->
+              failwith "Invalid state - cannot get here - no functions but send??"
+        in
+
+        loop functions
     | Ok (Join, topic, payload) ->
         let topic_and_channel =
           parse_topic topic
@@ -193,8 +201,18 @@ let channels topics client =
         in
         ( match topic_and_channel with
         | Ok (parsed_topic, channel) ->
+            let callbacks = channel.create_callbacks parsed_topic in
             let functions =
-              { push = send client client_id
+              { push =
+                  (fun payload ->
+                    let payload =
+                      if channel.intercept (Payload payload)
+                      then
+                        let (Payload payload) = callbacks.handle_out (Payload payload) in
+                        payload
+                      else payload
+                    in
+                    send client client_id payload )
               ; broadcast =
                   (fun payload ->
                     let string_topic = topic in
@@ -209,14 +227,13 @@ let channels topics client =
                         else Lwt.return_unit ) )
               }
             in
-            let callbacks = channel functions parsed_topic in
             Clients.join topic client_id callbacks ;
-            let%lwt answers = callbacks.join payload in
+            let%lwt answers = callbacks.join functions payload in
             let%lwt () = process_answers answers in
-            loop ()
+            loop (Some functions)
         | Error _error ->
             Lwt.return_unit )
   in
 
   log.info (fun log -> log "Listening") ;
-  loop ()
+  loop None

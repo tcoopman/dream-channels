@@ -18,14 +18,21 @@ type functions =
   ; broadcast_from : string -> unit Lwt.t
   }
 
-type channel = functions -> topic -> callbacks
+type intercept = payload -> bool
 
 and callbacks =
-  { join : payload -> answers
-  ; handle_message : payload -> answers
+  { join : functions -> payload -> answers
+  ; handle_message : functions -> payload -> answers
+  ; handle_out : payload -> payload
   }
 
-val channels : (string * channel) list -> Dream.websocket -> unit Lwt.t
+type channel = {
+  topic: string;
+  intercept: intercept;
+  create_callbacks: topic -> callbacks
+}
+
+val channels : channel list -> Dream.websocket -> unit Lwt.t
 
 (* A channel should have the following:
 

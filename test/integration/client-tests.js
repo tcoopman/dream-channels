@@ -169,7 +169,27 @@ test("test broadcast_from", (done) => {
   });
 });
 
-test.todo("test handle_out");
+test("test handle_out", (done) => {
+  const ws = new TestWs();
+
+  expect.assertions(2);
+
+  ws.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+      send("send|chat:1|transform_out");
+    }
+    if (counter == 2) {
+      expect(data).toBe("message transformed");
+      done();
+    }
+  });
+});
+
+test.todo("remove handle_out for push?? - phoenix does not have it");
+test.todo("handle_out on broadcast");
+test.todo("handle_out on broadcast_from");
+test.todo("multiple channels on one connection");
 test.todo("clean stopping of a channel");
 test.todo("add authentication on a socket");
 test.todo("heartbeat");
