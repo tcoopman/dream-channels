@@ -1,17 +1,19 @@
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 
 class TestWs {
   constructor(endpoint = "ws") {
+    this.messageCounter = 0;
     this.ws = new WebSocket(`ws://localhost:8080/${endpoint}`);
-    this.ws.on('open', () => {
-      this.ws.send('join|chat:1|hi');
+    this.ws.on("open", () => {
+      this.ws.send("join|chat:1|hi");
     });
   }
   onMessage(fun) {
-    this.ws.on('message', (data) => {
+    this.ws.on("message", (data) => {
       // console.log("got message", data);
-      fun(data)
-    })
+      this.messageCounter++;
+      fun(data, this.messageCounter);
+    });
   }
 
   send(data) {
@@ -23,8 +25,7 @@ class TestWs {
   }
 }
 
-
-test('joining a chat returns the welcome message', (done) => {
+test("joining a chat returns the welcome message", (done) => {
   const ws = new TestWs();
   ws.onMessage((data) => {
     expect(data).toBe("joined:1|payload:hi");
@@ -33,17 +34,15 @@ test('joining a chat returns the welcome message', (done) => {
   });
 });
 
-test('chat with multiple', (done) => {
+test("chat with multiple", (done) => {
   const ws1 = new TestWs();
   const ws2 = new TestWs();
   const ws3 = new TestWs();
 
-  let counter = 0;
-  ws3.onMessage((data) => {
-    counter++;
+  ws3.onMessage((data, counter) => {
     if (counter == 1) {
       expect(data).toBe("joined:1|payload:hi");
-      ws3.send('send|chat:1|broadcast');
+      ws3.send("send|chat:1|broadcast");
     }
     if (counter == 2) {
       expect(data).toBe("To everyone in 1");
@@ -52,19 +51,17 @@ test('chat with multiple', (done) => {
   });
 });
 
-test('I can join multiple channels', (done) => {
+test("I can join multiple channels", (done) => {
   const ws = new TestWs();
 
-  let counter = 0;
-  ws.onMessage((data) => {
-    counter++;
+  ws.onMessage((data, counter) => {
     if (counter == 1) {
       expect(data).toBe("joined:1|payload:hi");
-      ws.send('join|chat:2|hi2');
+      ws.send("join|chat:2|hi2");
     }
     if (counter == 2) {
       expect(data).toBe("joined:2|payload:hi2");
-      ws.send('send|chat:2|broadcast');
+      ws.send("send|chat:2|broadcast");
     }
     if (counter == 3) {
       expect(data).toBe("To everyone in 2");
@@ -73,26 +70,26 @@ test('I can join multiple channels', (done) => {
   });
 });
 
-test('I cannot send to channel that I did not join', (done) => {
+test("I cannot send to channel that I did not join", (done) => {
   const ws = new TestWs();
 
-  let counter = 0;
-  ws.onMessage((data) => {
-    counter++;
+  ws.onMessage((data, counter) => {
     if (counter == 1) {
       expect(data).toBe("joined:1|payload:hi");
-      ws.send('send|chat:2|hi2');
+      ws.send("send|chat:2|hi2");
     }
     if (counter == 2) {
-      expect(data).toBe("You tried to send to a channel, but you were not joined");
+      expect(data).toBe(
+        "You tried to send to a channel, but you were not joined"
+      );
       done();
     }
   });
 });
 
-test('works with multiple sockets', (done) => {
+test("works with multiple sockets", (done) => {
   const ws = new TestWs();
-  const ws2 = new TestWs("ws2")
+  const ws2 = new TestWs("ws2");
 
   ws.onMessage((data) => {
     expect(data).toBe("joined:1|payload:hi");
@@ -105,33 +102,33 @@ test('works with multiple sockets', (done) => {
     ws.terminate();
     done();
   });
-})
+});
 
-test('keeps working when clients terminate', (done) => {
-  const ws = new TestWs();
-  const ws2 = new TestWs()
-  const ws3 = new TestWs()
+// test("keeps working when clients terminate", (done) => {
+//   const ws = new TestWs();
+//   const ws2 = new TestWs();
+//   const ws3 = new TestWs();
 
-  let counter1 = 0
-  let counter2 = 0
-  ws.onMessage((data) => {
-    expect(data).toBe("joined:1|payload:hi");
-  });
+//   let counter1 = 0;
+//   ws.onMessage((data) => {
+//     expect(data).toBe("joined:1|payload:hi");
+//   });
 
-  ws2.onMessage((data) => {
-    expect(data).toBe("joined:1|payload:hi");
-    ws.terminate();
-  });
+//   ws2.onMessage((data) => {
+//     expect(data).toBe("joined:1|payload:hi");
+//     ws.terminate();
+//   });
 
-  ws3.onMessage((data) => {
-    expect(data).toBe("joined:1|payload:hi");
-  });
-})
+//   let counter3 = 0;
+//   ws3.onMessage((data) => {
+//     expect(data).toBe("joined:1|payload:hi");
+//   });
+// });
 
-test.todo('test broadcast_from')
-test.todo('test handle_out')
-test.todo('clean stopping of a channel')
-test.todo('add authentication on a socket')
-test.todo('heartbeat')
-test.todo('reconnecting')
-test.todo('more advanced example')
+test.todo("test broadcast_from");
+test.todo("test handle_out");
+test.todo("clean stopping of a channel");
+test.todo("add authentication on a socket");
+test.todo("heartbeat");
+test.todo("reconnecting");
+test.todo("more advanced example");
