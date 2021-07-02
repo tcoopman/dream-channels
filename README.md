@@ -6,6 +6,8 @@ Websocket channel implementation for [dream](https://github.com/aantron/dream) i
 
 * [ ] create example
 * [ ] documentation
+* [ ] create client library
+* [ ] define protocol
 
 ## Development
 
