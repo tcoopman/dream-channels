@@ -16,6 +16,9 @@ let chat_channel functions topic =
           | WithSubtopic ("chat", chat_id), "broadcast" ->
               let%lwt () = functions.broadcast ("To everyone in " ^ chat_id) in
               [] |> Lwt.return
+          | WithSubtopic ("chat", chat_id), "broadcast_from" ->
+              let%lwt () = functions.broadcast_from ("To everyone except in " ^ chat_id) in
+              [] |> Lwt.return
           | _ ->
               [] |> Lwt.return )
     }

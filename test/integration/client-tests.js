@@ -137,7 +137,38 @@ test("keeps working when clients terminate", (done) => {
   });
 });
 
-test.todo("test broadcast_from");
+test("test broadcast_from", (done) => {
+  const ws = new TestWs();
+  const ws2 = new TestWs();
+  const ws3 = new TestWs();
+
+  expect.assertions(5);
+
+  ws.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+    }
+    if (counter == 2) {
+      expect(data).toBe("To everyone except in 1");
+      done();
+    }
+  });
+
+  ws2.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+    ws2.send("send|chat:1|broadcast_from");
+  });
+
+  ws3.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+    }
+    if (counter == 2) {
+      expect(data).toBe("To everyone except in 1");
+    }
+  });
+});
+
 test.todo("test handle_out");
 test.todo("clean stopping of a channel");
 test.todo("add authentication on a socket");
