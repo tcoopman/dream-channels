@@ -104,26 +104,36 @@ test("works with multiple sockets", (done) => {
   });
 });
 
-// test("keeps working when clients terminate", (done) => {
-//   const ws = new TestWs();
-//   const ws2 = new TestWs();
-//   const ws3 = new TestWs();
+test("keeps working when clients terminate", (done) => {
+  const ws = new TestWs();
+  const ws2 = new TestWs();
+  const ws3 = new TestWs();
 
-//   let counter1 = 0;
-//   ws.onMessage((data) => {
-//     expect(data).toBe("joined:1|payload:hi");
-//   });
+  ws.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+    }
+    if (counter == 2) {
+      expect(data).toBe("To everyone in 1");
+    }
+  });
 
-//   ws2.onMessage((data) => {
-//     expect(data).toBe("joined:1|payload:hi");
-//     ws.terminate();
-//   });
+  ws2.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+    ws2.terminate();
+    ws3.send("send|chat:1|broadcast");
+  });
 
-//   let counter3 = 0;
-//   ws3.onMessage((data) => {
-//     expect(data).toBe("joined:1|payload:hi");
-//   });
-// });
+  ws3.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+    }
+    if (counter == 2) {
+      expect(data).toBe("To everyone in 1");
+      done();
+    }
+  });
+});
 
 test.todo("test broadcast_from");
 test.todo("test handle_out");

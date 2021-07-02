@@ -28,19 +28,53 @@ and callbacks =
 
 open Base
 
-let clients = Hashtbl.create (module Int)
+module Clients = struct
+  let clients = Hashtbl.create (module Int)
 
-let connect =
-  let last_client_id = ref 0 in
-  fun client ->
-    last_client_id := !last_client_id + 1 ;
-    Hashtbl.set clients ~key:!last_client_id ~data:client ;
-    !last_client_id
+  let clients_per_topic = Hashtbl.create (module String)
+
+  let connect =
+    let last_client_id = ref 0 in
+    fun client ->
+      let client_id = !last_client_id in
+      Hashtbl.set clients ~key:client_id ~data:([], client) ;
+      last_client_id := client_id + 1 ;
+      client_id
 
 
-let disconnect client_id = Hashtbl.remove clients client_id
+  let join topic client_id callbacks =
+    Hashtbl.change clients client_id ~f:(function
+        | None ->
+            None
+        | Some (topics, client) ->
+            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client, callbacks) ;
+            Some (topic :: topics, client) )
 
-let clients_per_topic = Hashtbl.create (module String)
+
+  let disconnect client_id =
+    match Hashtbl.find_and_remove clients client_id with
+    | None ->
+        ()
+    | Some (topics, _client) ->
+        List.iter
+          ~f:(fun topic ->
+            Hashtbl.change clients_per_topic topic ~f:(function
+                | None ->
+                    None
+                | Some clients ->
+                    Some
+                      (List.filter clients ~f:(fun (c_id, _c, _callbacks) ->
+                           not (Int.equal client_id c_id) ) ) ) )
+          topics
+
+
+  let iter_p ~topic ~f = Hashtbl.find_multi clients_per_topic topic |> Lwt_list.iter_p f
+
+  let callbacks client_id topic =
+    Hashtbl.find_multi clients_per_topic topic
+    |> List.find_map ~f:(fun (c_id, _client, callbacks) ->
+           if Int.equal client_id c_id then Some callbacks else None )
+end
 
 let log = Dream.sub_log "dream.channels"
 
@@ -100,7 +134,7 @@ let channels topics client =
         if String.equal expected_route expected_topic then Some channel else None )
       topics
   in
-  let client_id = connect client in
+  let client_id = Clients.connect client in
   let receive_and_parse () =
     match%lwt Dream.receive client with
     | Some message ->
@@ -116,8 +150,9 @@ let channels topics client =
     | [ `Reply rep ] ->
         send client client_id rep
     | [ `Stop message ] ->
+        (* TODO test *)
         log.info (fun log -> log "Stopping %s" message) ;
-        disconnect client_id ;
+        Clients.disconnect client_id ;
         Dream.close_websocket client
     | _ ->
         Lwt.return_unit
@@ -125,22 +160,21 @@ let channels topics client =
   let rec loop () =
     match%lwt receive_and_parse () with
     | Error _ ->
-        Lwt.return_unit
+        Clients.disconnect client_id ;
+        Dream.close_websocket client
     | Ok (Send, topic, payload) ->
-        let callbacks =
-          Hashtbl.find_multi clients_per_topic topic
-          |> List.find_map ~f:(fun (c_id, _client, callbacks) ->
-                 if Int.equal client_id c_id then Some callbacks else None )
-        in
+        let callbacks = Clients.callbacks client_id topic in
         ( match callbacks with
         | Some callbacks ->
             let%lwt answers = callbacks.handle_message payload in
             let%lwt () = process_answers answers in
             loop ()
         | None ->
-            let%lwt () = send client client_id "You tried to send to a channel, but you were not joined" in
+            let%lwt () =
+              send client client_id "You tried to send to a channel, but you were not joined"
+            in
             log.error (fun log -> log "tried to send but not joined") ;
-            loop ())
+            loop () )
     | Ok (Join, topic, payload) ->
         let topic_and_channel =
           parse_topic topic
@@ -156,20 +190,19 @@ let channels topics client =
               ; broadcast =
                   (fun payload ->
                     let string_topic = topic in
-                    Hashtbl.find_multi clients_per_topic string_topic
-                    |> Lwt_list.iter_p (fun (c_id, c, _callbacks) -> send c c_id payload) )
+                    Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
+                        send c c_id payload ) )
               ; broadcast_from =
                   (fun payload ->
                     let string_topic = topic in
-                    Hashtbl.find_multi clients_per_topic string_topic
-                    |> Lwt_list.iter_p (fun (c_id, c, _callbacks) ->
-                           if not (Int.equal client_id c_id)
-                           then send c c_id payload
-                           else Lwt.return_unit ) )
+                    Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
+                        if not (Int.equal client_id c_id)
+                        then send c c_id payload
+                        else Lwt.return_unit ) )
               }
             in
             let callbacks = channel functions parsed_topic in
-            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client, callbacks) ;
+            Clients.join topic client_id callbacks ;
             let%lwt answers = callbacks.join payload in
             let%lwt () = process_answers answers in
             loop ()
