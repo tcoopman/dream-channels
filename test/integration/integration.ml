@@ -23,6 +23,7 @@ let chat_channel functions topic =
               [] |> Lwt.return )
     }
 
+
 let test_channel functions topic =
   Socket.
     { join =
@@ -49,8 +50,7 @@ let () =
   Dream.run ~interface:"0.0.0.0"
   @@ Dream.logger
   @@ Dream.router
-       [ 
-         Dream.get "/ws" (fun _ -> Dream.websocket @@ Socket.channels [ ("chat:*", chat_channel) ]);
-         Dream.get "/ws2" (fun _ -> Dream.websocket @@ Socket.channels [ ("test:*", test_channel) ])
+       [ Dream.get "/ws" (fun _ -> Dream.websocket @@ Socket.channels [ ("chat:*", chat_channel) ])
+       ; Dream.get "/ws2" (fun _ -> Dream.websocket @@ Socket.channels [ ("test:*", test_channel) ])
        ]
   @@ Dream.not_found

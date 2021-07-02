@@ -167,7 +167,7 @@ let channels topics client =
   let rec loop () =
     match%lwt receive_and_parse () with
     | Error e ->
-        log.debug (fun log -> log "Closing %i - error %s" client_id e);
+        log.debug (fun log -> log "Closing %i - error %s" client_id e) ;
         Clients.disconnect client_id ;
         Dream.close_websocket client
     | Ok (Send, topic, payload) ->
