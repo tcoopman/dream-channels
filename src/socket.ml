@@ -76,6 +76,13 @@ module Clients = struct
            if Int.equal client_id c_id then Some callbacks else None )
 end
 
+(* module ClientTests = struct *)
+(*   let%expect_test "addition" = *)
+(*     let id = Clients.connect "(Dream.websocket)" in *)
+(*     let () = Clients.join "topic" id "callbacks" in *)
+(*     [%expect {| TODO |}] *)
+(* end *)
+
 let log = Dream.sub_log "dream.channels"
 
 (* join|topic|payload *)
@@ -159,7 +166,8 @@ let channels topics client =
   in
   let rec loop () =
     match%lwt receive_and_parse () with
-    | Error _ ->
+    | Error e ->
+        log.debug (fun log -> log "Closing %i - error %s" client_id e);
         Clients.disconnect client_id ;
         Dream.close_websocket client
     | Ok (Send, topic, payload) ->

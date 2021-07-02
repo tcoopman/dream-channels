@@ -1,5 +1,6 @@
 (library
  (public_name channels)
  (libraries dream base)
+ (inline_tests)
  (preprocess
-  (pps lwt_ppx)))
+  (pps ppx_expect lwt_ppx)))
