@@ -1,8 +1,8 @@
 const WebSocket = require('ws');
 
 class TestWs {
-  constructor() {
-    this.ws = new WebSocket('ws://localhost:8080/ws');
+  constructor(endpoint = "ws") {
+    this.ws = new WebSocket(`ws://localhost:8080/${endpoint}`);
     this.ws.on('open', () => {
       this.ws.send('join|chat:1|hi');
     });
@@ -90,7 +90,22 @@ test('I cannot send to channel that I did not join', (done) => {
   });
 });
 
-test.todo('works with multiple sockets')
+test('works with multiple sockets', (done) => {
+  const ws = new TestWs();
+  const ws2 = new TestWs("ws2")
+
+  ws.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+    ws.terminate();
+    done();
+  });
+
+  ws2.onMessage((data) => {
+    expect(data).toBe("joined-test:1|payload:hi");
+    ws.terminate();
+    done();
+  });
+})
 test.todo('keeps working when clients terminate')
 test.todo('test broadcast_from')
 test.todo('test handle_out')
