@@ -109,12 +109,15 @@ test("keeps working when clients terminate", (done) => {
   const ws2 = new TestWs();
   const ws3 = new TestWs();
 
+  expect.assertions(5);
+
   ws.onMessage((data, counter) => {
     if (counter == 1) {
       expect(data).toBe("joined:1|payload:hi");
     }
     if (counter == 2) {
       expect(data).toBe("To everyone in 1");
+      done();
     }
   });
 
@@ -130,7 +133,6 @@ test("keeps working when clients terminate", (done) => {
     }
     if (counter == 2) {
       expect(data).toBe("To everyone in 1");
-      done();
     }
   });
 });
