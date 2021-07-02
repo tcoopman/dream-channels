@@ -6,6 +6,7 @@
     "ws": "^7.5.1"
   },
   "devDependencies": {
-    "jest": "^27.0.6"
+    "jest": "^27.0.6",
+    "prettier": "^2.3.2"
   }
 }

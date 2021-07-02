@@ -106,9 +106,32 @@ test('works with multiple sockets', (done) => {
     done();
   });
 })
-test.todo('keeps working when clients terminate')
+
+test('keeps working when clients terminate', (done) => {
+  const ws = new TestWs();
+  const ws2 = new TestWs()
+  const ws3 = new TestWs()
+
+  let counter1 = 0
+  let counter2 = 0
+  ws.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+  });
+
+  ws2.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+    ws.terminate();
+  });
+
+  ws3.onMessage((data) => {
+    expect(data).toBe("joined:1|payload:hi");
+  });
+})
+
 test.todo('test broadcast_from')
 test.todo('test handle_out')
+test.todo('clean stopping of a channel')
 test.todo('add authentication on a socket')
 test.todo('heartbeat')
 test.todo('reconnecting')
+test.todo('more advanced example')
