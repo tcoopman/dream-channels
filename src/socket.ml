@@ -82,7 +82,7 @@ module Clients = struct
                 | Some clients ->
                     let removed, keeping =
                       List.partition_tf clients ~f:(fun (c_id, _c, _callbacks) ->
-                          (Int.equal client_id c_id) )
+                          Int.equal client_id c_id )
                     in
                     List.hd removed
                     |> Option.iter ~f:(fun (_c_id, _c, callbacks) -> callbacks.terminate ()) ;
@@ -178,7 +178,14 @@ let channels channels client =
     | None ->
         Lwt_result.fail "No message received"
   in
-  let process_answer = function `Ok -> Lwt.return_unit | _ -> Lwt.return_unit in
+  let process_answer = function
+    | `Ok ->
+        Lwt.return_unit
+    | `Reply message ->
+        send_or_disconnect client client_id message
+    | _ ->
+        Lwt.return_unit
+  in
   let rec loop functions =
     match%lwt receive_and_parse () with
     | Error _error ->
@@ -188,8 +195,7 @@ let channels channels client =
         let%lwt () =
           match (functions, callbacks) with
           | Some functions, Some callbacks ->
-              log.debug (fun log ->
-                  log "client: %i is handling the message" client_id ) ;
+              log.debug (fun log -> log "client: %i is handling the message" client_id) ;
               let%lwt answer = callbacks.handle_message functions payload in
               process_answer answer
           | _, None ->

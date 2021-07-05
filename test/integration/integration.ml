@@ -2,6 +2,8 @@ open Channels
 
 let ok () = Lwt.return `Ok
 
+let reply answer = Lwt.return (`Reply answer)
+
 let stop reason = Lwt.return (`Stop reason)
 
 let chat_channel =
@@ -12,8 +14,10 @@ let chat_channel =
         (fun topic ->
           { join =
               (fun functions (Payload payload) ->
-                match topic with
-                | WithSubtopic ("chat", chat_id) ->
+                match (topic, payload) with
+                | WithSubtopic ("chat", _chat_id), "reply" ->
+                    reply "replied"
+                | WithSubtopic ("chat", chat_id), _ ->
                     let%lwt () = functions.push @@ "joined:" ^ chat_id ^ "|payload:" ^ payload in
                     ok ()
                 | _ ->
@@ -21,6 +25,8 @@ let chat_channel =
           ; handle_message =
               (fun functions (Payload payload) ->
                 match (topic, payload) with
+                | WithSubtopic ("chat", _chat_id), "reply" ->
+                    reply "replied"
                 | WithSubtopic ("chat", chat_id), "broadcast" ->
                     let%lwt () = functions.broadcast ("To everyone in " ^ chat_id) in
                     ok ()

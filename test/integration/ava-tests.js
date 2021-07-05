@@ -1,16 +1,18 @@
 const test = require("ava");
 const WebSocket = require("ws");
 
+const connection = "ws://localhost:8080";
+
 class TestRoom {
-  constructor(room) {
-    if (room === undefined) {
-      throw "room is required";
+  constructor(roomNumber) {
+    if (roomNumber === undefined) {
+      throw "roomNumber is required";
     }
-    this.room = room;
+    this.roomNumber = roomNumber;
     this.messageCounter = 0;
-    this.ws = new WebSocket(`ws://localhost:8080/ws2`);
+    this.ws = new WebSocket(`${connection}/ws2`);
     this.ws.on("open", () => {
-      this.ws.send(`join|test:${room}|hi`);
+      this.ws.send(`join|test:${roomNumber}|hi`);
     });
   }
   onMessage(fun) {
@@ -26,15 +28,15 @@ class TestRoom {
 }
 
 class ChatRoom {
-  constructor(chatRoom, endpoint = "ws") {
-    if (chatRoom === undefined) {
-      throw "chatRoom number is required";
+  constructor(roomNumber, endpoint = "ws") {
+    if (roomNumber === undefined) {
+      throw "roomNumber is required";
     }
-    this.chatRoom = chatRoom;
+    this.roomNumber = roomNumber;
     this.messageCounter = 0;
-    this.ws = new WebSocket(`ws://localhost:8080/${endpoint}`);
+    this.ws = new WebSocket(`${connection}/ws`);
     this.ws.on("open", () => {
-      this.ws.send(`join|chat:${chatRoom}|hi`);
+      this.ws.send(`join|chat:${roomNumber}|hi`);
     });
   }
   onMessage(fun) {
@@ -49,7 +51,7 @@ class ChatRoom {
   }
 
   send(data) {
-    this.ws.send(`send|chat:${this.chatRoom}|${data}`);
+    this.ws.send(`send|chat:${this.roomNumber}|${data}`);
   }
 
   terminate() {
@@ -64,49 +66,49 @@ class ChatRoom {
 let testCounter = 0;
 
 function endIn(t) {
-  setTimeout(() => t.end(), 100)
+  setTimeout(() => t.end(), 100);
 }
 
 test.beforeEach((t) => {
-  t.context.counter = testCounter;
+  t.context.roomNumber = testCounter;
   testCounter++;
 });
 
 test.cb("joining a chat returns the welcome message", (t) => {
-  const ws = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
   t.plan(1);
   ws.onMessage((data) => {
-    t.is(data, `joined:${t.context.counter}|payload:hi`);
+    t.is(data, `joined:${t.context.roomNumber}|payload:hi`);
     t.end();
   });
 });
 
 test.cb("chat with multiple", (t) => {
-  const ws1 = new ChatRoom(t.context.counter);
-  const ws2 = new ChatRoom(t.context.counter);
-  const ws3 = new ChatRoom(t.context.counter);
+  const ws1 = new ChatRoom(t.context.roomNumber);
+  const ws2 = new ChatRoom(t.context.roomNumber);
+  const ws3 = new ChatRoom(t.context.roomNumber);
 
   t.plan(2);
 
   ws3.onMessage((data, counter) => {
     if (counter == 1) {
-      t.is(data, `joined:${t.context.counter}|payload:hi`);
+      t.is(data, `joined:${t.context.roomNumber}|payload:hi`);
       ws3.send("broadcast");
     }
     if (counter == 2) {
-      t.is(data, `To everyone in ${t.context.counter}`);
+      t.is(data, `To everyone in ${t.context.roomNumber}`);
       t.end();
     }
   });
 });
 
 test.cb("I can join multiple channels", (t) => {
-  const ws = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
   t.plan(3);
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      t.is(data, `joined:${t.context.counter}|payload:hi`);
+      t.is(data, `joined:${t.context.roomNumber}|payload:hi`);
       ws.sendFullMessage("join|chat:custom|hi2");
     }
     if (counter == 2) {
@@ -121,7 +123,7 @@ test.cb("I can join multiple channels", (t) => {
 });
 
 test.cb("I cannot send to channel that I did not join", (t) => {
-  const ws = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
   t.plan(1);
 
   ws.onMessage((data, counter) => {
@@ -136,32 +138,32 @@ test.cb("I cannot send to channel that I did not join", (t) => {
 });
 
 test.cb("works with multiple sockets", (t) => {
-  const ws = new ChatRoom(t.context.counter);
-  const ws2 = new TestRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
+  const ws2 = new TestRoom(t.context.roomNumber);
 
-  t.plan(2)
+  t.plan(2);
 
   ws.onMessage((data) => {
-    t.is(data, `joined:${t.context.counter}|payload:hi`);
+    t.is(data, `joined:${t.context.roomNumber}|payload:hi`);
   });
 
   ws2.onMessage((data) => {
-    t.is(data, `joined-test:${t.context.counter}|payload:hi`);
+    t.is(data, `joined-test:${t.context.roomNumber}|payload:hi`);
   });
 
   endIn(t);
 });
 
 test.cb("keeps working when clients terminate", (t) => {
-  const ws = new ChatRoom(t.context.counter);
-  const ws2 = new ChatRoom(t.context.counter);
-  const ws3 = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
+  const ws2 = new ChatRoom(t.context.roomNumber);
+  const ws3 = new ChatRoom(t.context.roomNumber);
 
   t.plan(2);
 
   ws.onMessage((data, counter) => {
     if (counter == 2) {
-      t.is(data, `To everyone in ${t.context.counter}`);
+      t.is(data, `To everyone in ${t.context.roomNumber}`);
     }
   });
 
@@ -172,7 +174,7 @@ test.cb("keeps working when clients terminate", (t) => {
 
   ws3.onMessage((data, counter) => {
     if (counter == 2) {
-      t.is(data, `To everyone in ${t.context.counter}`);
+      t.is(data, `To everyone in ${t.context.roomNumber}`);
     }
   });
 
@@ -180,15 +182,15 @@ test.cb("keeps working when clients terminate", (t) => {
 });
 
 test.cb("test broadcast_from", (t) => {
-  const ws = new ChatRoom(t.context.counter);
-  const ws2 = new ChatRoom(t.context.counter);
-  const ws3 = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
+  const ws2 = new ChatRoom(t.context.roomNumber);
+  const ws3 = new ChatRoom(t.context.roomNumber);
 
   t.plan(2);
 
   ws.onMessage((data, counter) => {
     if (counter == 2) {
-      t.is(data, `To everyone except in ${t.context.counter}`);
+      t.is(data, `To everyone except in ${t.context.roomNumber}`);
     }
   });
 
@@ -198,7 +200,7 @@ test.cb("test broadcast_from", (t) => {
 
   ws3.onMessage((data, counter) => {
     if (counter == 2) {
-      t.is(data, `To everyone except in ${t.context.counter}`);
+      t.is(data, `To everyone except in ${t.context.roomNumber}`);
     }
   });
 
@@ -206,7 +208,7 @@ test.cb("test broadcast_from", (t) => {
 });
 
 test.cb("test handle_out broadcast", (t) => {
-  const ws = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
 
   t.plan(1);
 
@@ -223,8 +225,8 @@ test.cb("test handle_out broadcast", (t) => {
 });
 
 test.cb("test handle_out broadcast_from", (t) => {
-  const ws = new ChatRoom(t.context.counter);
-  const ws2 = new ChatRoom(t.context.counter);
+  const ws = new ChatRoom(t.context.roomNumber);
+  const ws2 = new ChatRoom(t.context.roomNumber);
 
   t.plan(1);
 
@@ -241,10 +243,34 @@ test.cb("test handle_out broadcast_from", (t) => {
   endIn(t);
 });
 
-test.todo("remove handle_out for push?? - phoenix does not have it");
-test.todo("handle_out on broadcast");
-test.todo("handle_out on broadcast_from");
-test.todo("multiple channels on one connection");
+test.cb("test getting a reply on join", (t) => {
+  t.plan(1);
+  const ws = new WebSocket(`${connection}/ws`);
+  ws.on("message", (data) => {
+    t.is(data, "replied");
+  });
+  ws.on("open", () => {
+    ws.send(`join|chat:${t.context.roomNumber}|reply`);
+  });
+  endIn(t);
+});
+
+test.cb("test getting a reply on send", (t) => {
+  t.plan(1);
+  const ws = new ChatRoom(t.context.roomNumber);
+  ws.onMessage((data, counter) => {
+    if (counter == 1) {
+      ws.send("reply");
+    }
+    if (counter == 2) {
+      t.is(data, "replied");
+    }
+  });
+  endIn(t);
+});
+
+test.cb.skip("test getting a stop on join", (t) => {});
+
 test.todo("clean stopping of a channel");
 test.todo("add authentication on a socket");
 test.todo("heartbeat");
