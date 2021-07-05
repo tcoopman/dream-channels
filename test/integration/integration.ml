@@ -17,6 +17,8 @@ let chat_channel =
                 match (topic, payload) with
                 | WithSubtopic ("chat", _chat_id), "reply" ->
                     reply "replied"
+                | WithSubtopic ("chat", _chat_id), "stop" ->
+                    stop "closed"
                 | WithSubtopic ("chat", chat_id), _ ->
                     let%lwt () = functions.push @@ "joined:" ^ chat_id ^ "|payload:" ^ payload in
                     ok ()
@@ -27,6 +29,8 @@ let chat_channel =
                 match (topic, payload) with
                 | WithSubtopic ("chat", _chat_id), "reply" ->
                     reply "replied"
+                | WithSubtopic ("chat", _chat_id), "stop" ->
+                    stop "replied"
                 | WithSubtopic ("chat", chat_id), "broadcast" ->
                     let%lwt () = functions.broadcast ("To everyone in " ^ chat_id) in
                     ok ()

@@ -68,26 +68,25 @@ module Clients = struct
             Some (topic :: topics, client) )
 
 
+  let close_channel client_id topic =
+    Hashtbl.change clients_per_topic topic ~f:(function
+        | None ->
+            None
+        | Some clients ->
+            let removed, keeping =
+              List.partition_tf clients ~f:(fun (c_id, _c, _callbacks) -> Int.equal client_id c_id)
+            in
+            List.hd removed |> Option.iter ~f:(fun (_c_id, _c, callbacks) -> callbacks.terminate ()) ;
+            Some keeping )
+
+
   let disconnect client_id =
     log.debug (fun log -> log "disconnecting %i" client_id) ;
     match Hashtbl.find_and_remove clients client_id with
     | None ->
         ()
     | Some (topics, _client) ->
-        List.iter
-          ~f:(fun topic ->
-            Hashtbl.change clients_per_topic topic ~f:(function
-                | None ->
-                    None
-                | Some clients ->
-                    let removed, keeping =
-                      List.partition_tf clients ~f:(fun (c_id, _c, _callbacks) ->
-                          Int.equal client_id c_id )
-                    in
-                    List.hd removed
-                    |> Option.iter ~f:(fun (_c_id, _c, callbacks) -> callbacks.terminate ()) ;
-                    Some keeping ) )
-          topics
+        List.iter ~f:(close_channel client_id) topics
 
 
   let iter_p ~topic ~f = Hashtbl.find_multi clients_per_topic topic |> Lwt_list.iter_p f
@@ -178,10 +177,15 @@ let channels channels client =
     | None ->
         Lwt_result.fail "No message received"
   in
-  let process_answer = function
+  let process_answer topic = function
     | `Ok ->
         Lwt.return_unit
     | `Reply message ->
+        send_or_disconnect client client_id message
+    | `Stop message ->
+        let () =
+          match topic with None -> () | Some topic -> Clients.close_channel client_id topic
+        in
         send_or_disconnect client client_id message
     | _ ->
         Lwt.return_unit
@@ -197,7 +201,7 @@ let channels channels client =
           | Some functions, Some callbacks ->
               log.debug (fun log -> log "client: %i is handling the message" client_id) ;
               let%lwt answer = callbacks.handle_message functions payload in
-              process_answer answer
+              process_answer (Some topic) answer
           | _, None ->
               let (Payload p) = payload in
               log.debug (fun log ->
@@ -263,7 +267,7 @@ let channels channels client =
             in
             Clients.join topic client_id callbacks ;
             let%lwt answer = callbacks.join functions payload in
-            let%lwt () = process_answer answer in
+            let%lwt () = process_answer None answer in
             loop (Some functions)
         | Error error ->
             log.error (fun log -> log "Could not match topic: %s" error) ;

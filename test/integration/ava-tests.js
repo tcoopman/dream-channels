@@ -65,8 +65,8 @@ class ChatRoom {
 
 let testCounter = 0;
 
-function endIn(t) {
-  setTimeout(() => t.end(), 100);
+function endIn(t, timeout=100) {
+  setTimeout(() => t.end(), timeout);
 }
 
 test.beforeEach((t) => {
@@ -269,7 +269,55 @@ test.cb("test getting a reply on send", (t) => {
   endIn(t);
 });
 
-test.cb.skip("test getting a stop on join", (t) => {});
+test.cb("test getting a stop on join", (t) => {
+  t.plan(3);
+  const ws = new WebSocket(`${connection}/ws`);
+  console.log(t.context.roomNumber);
+  let counter = 0;
+  ws.on("message", (data) => {
+    counter++;
+    if (counter === 1) {
+      t.is(data, "joined:11|payload:hi");
+      ws.send(`join|chat:to-stop-on-join|stop`);
+    }
+    if (counter === 2) {
+      t.is(data, "closed");
+      ws.send(`send|chat:${t.context.roomNumber}|reply`);
+    }
+    if (counter === 3) {
+      t.is(data, "replied");
+    }
+  });
+  ws.on("open", () => {
+    ws.send(`join|chat:${t.context.roomNumber}|hi`);
+  });
+  endIn(t);
+});
+
+test.cb("test getting a stop on send", (t) => {
+  t.plan(1);
+  const ws = new WebSocket(`${connection}/ws`);
+  let counter = 0;
+  ws.on("message", (data) => {
+    counter++;
+    if (counter === 1) {
+      ws.send(`join|chat:to-stop-on-send|hi`);
+    }
+    if (counter === 2) {
+      ws.send(`send|chat:to-stop-on-send|stop`);
+    }
+    if (counter === 3) {
+      ws.send(`send|chat:${t.context.roomNumber}|reply`);
+    }
+    if (counter === 4) {
+      t.is(data, "replied");
+    }
+  });
+  ws.on("open", () => {
+    ws.send(`join|chat:${t.context.roomNumber}|hi`);
+  });
+  endIn(t);
+});
 
 test.todo("clean stopping of a channel");
 test.todo("add authentication on a socket");
