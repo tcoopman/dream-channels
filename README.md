@@ -1,13 +1,20 @@
 # Dream-Channels
 
+**Status:** very alpha - expect breaking changes!
+
 Websocket channel implementation for [dream](https://github.com/aantron/dream) inspired by [Phoenix Channels](https://hexdocs.pm/phoenix/channels.html)
+
+The goal of this library is to build a higher level abstraction around websockets in dream to make it easy
+to build webapplications that use websockets.
+
+The design is highly inspired from Phoenix.
 
 ## TODO
 
-* [ ] create example
-* [ ] documentation
-* [ ] create client library
 * [ ] define protocol
+* [ ] create client library
+* [ ] create a chat example with multiple rooms
+* [ ] documentation
 
 ## Development
 
