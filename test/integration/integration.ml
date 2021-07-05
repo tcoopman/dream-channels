@@ -44,7 +44,7 @@ let chat_channel =
                     let%lwt () = functions.broadcast_from "transform_out" in
                     ok ()
                 | _ ->
-                    ok () )
+                    stop "unknow message type" )
           ; handle_out = (fun (Payload _) -> Some (Payload "message transformed"))
           ; terminate = (fun () -> ())
           } )

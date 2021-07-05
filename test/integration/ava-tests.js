@@ -230,12 +230,10 @@ test.cb("test handle_out broadcast_from", (t) => {
 
   t.plan(1);
 
-  ws.onMessage((data, counter) => {
+  ws2.onMessage((data, counter) => {
     if (counter == 1) {
       ws.send("transform_out_broadcast_from");
     }
-  });
-  ws2.onMessage((data, counter) => {
     if (counter == 2) {
       t.is(data, "message transformed");
     }
