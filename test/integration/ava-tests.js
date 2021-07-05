@@ -52,6 +52,14 @@ class ChatRoom {
     this.send(`send|chat:${this.chatRoom}|broadcast`);
   }
 
+  broadcast_from() {
+    this.send(`send|chat:${this.chatRoom}|broadcast_from`);
+  }
+
+  send2(data) {
+    this.send(`send|chat:${this.chatRoom}|${data}`);
+  }
+
   terminate() {
     this.ws.terminate();
   }
@@ -62,6 +70,10 @@ class ChatRoom {
 }
 
 let testCounter = 0;
+
+function endIn(t) {
+  setTimeout(() => t.end(), 50)
+}
 
 test.beforeEach((t) => {
   t.context.counter = testCounter;
@@ -143,8 +155,9 @@ test.cb("works with multiple sockets", (t) => {
 
   ws2.onMessage((data) => {
     t.is(data, `joined-test:${t.context.counter}|payload:hi`);
-    t.end();
   });
+
+  endIn(t);
 });
 
 test.cb("keeps working when clients terminate", (t) => {
@@ -157,7 +170,6 @@ test.cb("keeps working when clients terminate", (t) => {
   ws.onMessage((data, counter) => {
     if (counter == 2) {
       t.is(data, `To everyone in ${t.context.counter}`);
-      t.end();
     }
   });
 
@@ -171,83 +183,70 @@ test.cb("keeps working when clients terminate", (t) => {
       t.is(data, `To everyone in ${t.context.counter}`);
     }
   });
+
+  endIn(t);
 });
 
-test.cb.skip("test broadcast_from", (t) => {
+test.cb("test broadcast_from", (t) => {
   const ws = new ChatRoom(t.context.counter);
   const ws2 = new ChatRoom(t.context.counter);
   const ws3 = new ChatRoom(t.context.counter);
 
-  t.plan(5);
+  t.plan(2);
 
   ws.onMessage((data, counter) => {
-    if (counter == 1) {
-      t.is(data, "joined:1|payload:hi");
-    }
     if (counter == 2) {
-      t.is(data, "To everyone except in 1");
-      t.end();
+      t.is(data, `To everyone except in ${t.context.counter}`);
     }
   });
 
   ws2.onMessage((data) => {
-    t.is(data, "joined:1|payload:hi");
-    ws2.send("send|chat:1|broadcast_from");
+    ws2.broadcast_from();
   });
 
   ws3.onMessage((data, counter) => {
-    if (counter == 1) {
-      t.is(data, "joined:1|payload:hi");
-    }
     if (counter == 2) {
-      t.is(data, "To everyone except in 1");
+      t.is(data, `To everyone except in ${t.context.counter}`);
     }
   });
+
+  endIn(t);
 });
 
-test.skip("test handle_out broadcast", (t) => {
+test.cb("test handle_out broadcast", (t) => {
   const ws = new ChatRoom(t.context.counter);
 
-  t.plan(2);
+  t.plan(1);
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      t.is(data, "joined:1|payload:hi");
-      ws.send("send|chat:1|transform_out_broadcast");
+      ws.send2("transform_out_broadcast");
     }
     if (counter == 2) {
       t.is(data, "message transformed");
-      ws.terminate();
-      t.end();
     }
   });
+
+  endIn(t);
 });
 
-test.skip("test handle_out broadcast_from", (t) => {
+test.cb("test handle_out broadcast_from", (t) => {
   const ws = new ChatRoom(t.context.counter);
   const ws2 = new ChatRoom(t.context.counter);
 
-  t.plan(3);
+  t.plan(1);
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      t.is(data, "joined:1|payload:hi");
-      setTimeout(() => {
-        ws.send("send|chat:1|transform_out_broadcast_from");
-      }, 20);
+      ws.send2("transform_out_broadcast_from");
     }
   });
   ws2.onMessage((data, counter) => {
-    if (counter == 1) {
-      t.is(data, "joined:1|payload:hi");
-    }
     if (counter == 2) {
       t.is(data, "message transformed");
-      ws.terminate();
-      ws2.terminate();
-      t.end();
     }
   });
+  endIn(t);
 });
 
 test.todo("remove handle_out for push?? - phoenix does not have it");
