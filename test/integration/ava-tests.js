@@ -20,7 +20,7 @@ class TestRoom {
     });
   }
 
-  send(data) {
+  sendFullMessage(data) {
     this.ws.send(data);
   }
 }
@@ -44,20 +44,12 @@ class ChatRoom {
     });
   }
 
-  send(data) {
+  sendFullMessage(data) {
     this.ws.send(data);
   }
 
-  broadcast() {
-    this.send(`send|chat:${this.chatRoom}|broadcast`);
-  }
-
-  broadcast_from() {
-    this.send(`send|chat:${this.chatRoom}|broadcast_from`);
-  }
-
-  send2(data) {
-    this.send(`send|chat:${this.chatRoom}|${data}`);
+  send(data) {
+    this.ws.send(`send|chat:${this.chatRoom}|${data}`);
   }
 
   terminate() {
@@ -72,7 +64,7 @@ class ChatRoom {
 let testCounter = 0;
 
 function endIn(t) {
-  setTimeout(() => t.end(), 50)
+  setTimeout(() => t.end(), 100)
 }
 
 test.beforeEach((t) => {
@@ -99,7 +91,7 @@ test.cb("chat with multiple", (t) => {
   ws3.onMessage((data, counter) => {
     if (counter == 1) {
       t.is(data, `joined:${t.context.counter}|payload:hi`);
-      ws3.broadcast();
+      ws3.send("broadcast");
     }
     if (counter == 2) {
       t.is(data, `To everyone in ${t.context.counter}`);
@@ -115,11 +107,11 @@ test.cb("I can join multiple channels", (t) => {
   ws.onMessage((data, counter) => {
     if (counter == 1) {
       t.is(data, `joined:${t.context.counter}|payload:hi`);
-      ws.send("join|chat:custom|hi2");
+      ws.sendFullMessage("join|chat:custom|hi2");
     }
     if (counter == 2) {
       t.is(data, "joined:custom|payload:hi2");
-      ws.send("send|chat:custom|broadcast");
+      ws.sendFullMessage("send|chat:custom|broadcast");
     }
     if (counter == 3) {
       t.is(data, "To everyone in custom");
@@ -134,7 +126,7 @@ test.cb("I cannot send to channel that I did not join", (t) => {
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      ws.send("send|chat:not_joined|hi2");
+      ws.sendFullMessage("send|chat:not_joined|hi2");
     }
     if (counter == 2) {
       t.is(data, "You tried to send to a channel, but you were not joined");
@@ -175,7 +167,7 @@ test.cb("keeps working when clients terminate", (t) => {
 
   ws2.onMessage((data) => {
     ws2.terminate();
-    ws3.broadcast();
+    ws3.send("broadcast");
   });
 
   ws3.onMessage((data, counter) => {
@@ -201,7 +193,7 @@ test.cb("test broadcast_from", (t) => {
   });
 
   ws2.onMessage((data) => {
-    ws2.broadcast_from();
+    ws2.send("broadcast_from");
   });
 
   ws3.onMessage((data, counter) => {
@@ -220,7 +212,7 @@ test.cb("test handle_out broadcast", (t) => {
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      ws.send2("transform_out_broadcast");
+      ws.send("transform_out_broadcast");
     }
     if (counter == 2) {
       t.is(data, "message transformed");
@@ -238,7 +230,7 @@ test.cb("test handle_out broadcast_from", (t) => {
 
   ws.onMessage((data, counter) => {
     if (counter == 1) {
-      ws.send2("transform_out_broadcast_from");
+      ws.send("transform_out_broadcast_from");
     }
   });
   ws2.onMessage((data, counter) => {
