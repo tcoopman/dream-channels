@@ -23,7 +23,7 @@ type intercept = payload -> bool
 and callbacks =
   { join : functions -> payload -> answers
   ; handle_message : functions -> payload -> answers
-  ; handle_out : payload -> payload
+  ; handle_out : payload -> payload option
   }
 
 type channel =
@@ -34,6 +34,17 @@ type channel =
 
 open Base
 
+let log = Dream.sub_log "dream.channels"
+
+let send client client_id payload =
+  try%lwt Dream.send client payload |> Lwt_result.ok with
+  | error ->
+      let error = Exn.to_string error in
+      Stdlib.print_endline error ;
+      log.error (fun log -> log "failed to send to client: %i - error: %s" client_id error) ;
+      Lwt_result.fail (Printf.sprintf "failed to send to client: %i" client_id)
+
+
 module Clients = struct
   let clients = Hashtbl.create (module Int)
 
@@ -43,6 +54,7 @@ module Clients = struct
     let last_client_id = ref 0 in
     fun client ->
       let client_id = !last_client_id in
+      log.debug (fun log -> log "new client connected: %i" client_id) ;
       Hashtbl.set clients ~key:client_id ~data:([], client) ;
       last_client_id := client_id + 1 ;
       client_id
@@ -58,6 +70,7 @@ module Clients = struct
 
 
   let disconnect client_id =
+    log.debug (fun log -> log "disconnecting %i" client_id) ;
     match Hashtbl.find_and_remove clients client_id with
     | None ->
         ()
@@ -88,8 +101,6 @@ end
 (*     let () = Clients.join "topic" id "callbacks" in *)
 (*     [%expect {| TODO |}] *)
 (* end *)
-
-let log = Dream.sub_log "dream.channels"
 
 (* join|topic|payload *)
 (* send|topic|payload *)
@@ -130,11 +141,18 @@ let parse_message message =
     splitted
 
 
-let send client client_id payload =
-  try%lwt Dream.send client payload with
-  | _ ->
-      log.error (fun log -> log "failed to send to client: %i" client_id) ;
+let disconnect client_id client =
+  log.debug (fun log -> log "Disconnecting client %i" client_id) ;
+  Clients.disconnect client_id ;
+  Dream.close_websocket client
+
+
+let send_or_disconnect client client_id payload =
+  match%lwt send client client_id payload with
+  | Ok () ->
       Lwt.return_unit
+  | Error _error ->
+      disconnect client_id client
 
 
 let channels channels client =
@@ -149,6 +167,7 @@ let channels channels client =
   in
   let client_id = Clients.connect client in
   let receive_and_parse () =
+    (* TODO incorrect message is not the same as disconnecting *)
     match%lwt Dream.receive client with
     | Some message ->
         log.info (fun log -> log "Message received: %s" message) ;
@@ -161,21 +180,18 @@ let channels channels client =
     | [] ->
         Lwt.return_unit
     | [ `Reply rep ] ->
-        send client client_id rep
+        send_or_disconnect client client_id rep
     | [ `Stop message ] ->
         (* TODO test *)
         log.info (fun log -> log "Stopping %s" message) ;
-        Clients.disconnect client_id ;
-        Dream.close_websocket client
+        disconnect client_id client
     | _ ->
         Lwt.return_unit
   in
   let rec loop functions =
     match%lwt receive_and_parse () with
-    | Error e ->
-        log.debug (fun log -> log "Closing %i - error %s" client_id e) ;
-        Clients.disconnect client_id ;
-        Dream.close_websocket client
+    | Error _error ->
+        disconnect client_id client
     | Ok (Send, topic, payload) ->
         let callbacks = Clients.callbacks client_id topic in
         let%lwt () =
@@ -184,8 +200,12 @@ let channels channels client =
               let%lwt answers = callbacks.handle_message functions payload in
               process_answers answers
           | _, None ->
-              log.error (fun log -> log "tried to send but not joined") ;
-              send client client_id "You tried to send to a channel, but you were not joined"
+              log.debug (fun log ->
+                  log "received a message, but this client (%i) is not joined" client_id ) ;
+              send_or_disconnect
+                client
+                client_id
+                "You tried to send to a channel, but you were not joined"
           | None, Some _ ->
               failwith "Invalid state - cannot get here - no functions but send??"
         in
@@ -203,27 +223,41 @@ let channels channels client =
         | Ok (parsed_topic, channel) ->
             let callbacks = channel.create_callbacks parsed_topic in
             let functions =
-              { push =
-                  (fun payload ->
-                    let payload =
-                      if channel.intercept (Payload payload)
-                      then
-                        let (Payload payload) = callbacks.handle_out (Payload payload) in
-                        payload
-                      else payload
-                    in
-                    send client client_id payload )
+              let send_with_handle_out client client_id payload =
+                match callbacks.handle_out (Payload payload) with
+                | Some (Payload payload) ->
+                    send_or_disconnect client client_id payload
+                | None ->
+                    Lwt.return_unit
+              in
+              { push = send_or_disconnect client client_id
               ; broadcast =
                   (fun payload ->
                     let string_topic = topic in
+                    let send =
+                      if channel.intercept (Payload payload)
+                      then send_with_handle_out
+                      else send_or_disconnect
+                    in
                     Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
                         send c c_id payload ) )
               ; broadcast_from =
                   (fun payload ->
                     let string_topic = topic in
+                    let send =
+                      let () = log.debug (fun log -> log "checking intercept") in
+                      if channel.intercept (Payload payload)
+                      then send_with_handle_out
+                      else send_or_disconnect
+                    in
                     Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
                         if not (Int.equal client_id c_id)
-                        then send c c_id payload
+                        then
+                          let () =
+                            log.debug (fun log ->
+                                log "broadcast_from the message %s %i" payload c_id )
+                          in
+                          send c c_id payload
                         else Lwt.return_unit ) )
               }
             in
@@ -231,7 +265,8 @@ let channels channels client =
             let%lwt answers = callbacks.join functions payload in
             let%lwt () = process_answers answers in
             loop (Some functions)
-        | Error _error ->
+        | Error error ->
+            log.error (fun log -> log "Could not match topic: %s" error) ;
             Lwt.return_unit )
   in
 
