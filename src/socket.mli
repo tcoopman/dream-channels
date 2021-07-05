@@ -4,11 +4,9 @@ type topic =
 
 type payload = Payload of string
 
-type answers = answer list Lwt.t
-
-and answer =
-  [ `Reply of string
-  | `Broadcast of string
+type answer =
+  [ `Ok 
+  | `Reply of string
   | `Stop of string
   ]
 
@@ -21,9 +19,9 @@ type functions =
 type intercept = payload -> bool
 
 and callbacks =
-  { join : functions -> payload -> answers
-  ; handle_message : functions -> payload -> answers
-  ; handle_out : payload -> payload option
+  { join : functions -> payload -> answer Lwt.t
+  ; handle_message : functions -> payload -> answer Lwt.t
+  ; handle_out : payload -> payload option 
   ; terminate : unit -> unit
   }
 

@@ -4,11 +4,9 @@ type topic =
 
 type payload = Payload of string
 
-type answers = answer list Lwt.t
-
-and answer =
-  [ `Reply of string
-  | `Broadcast of string
+type answer =
+  [ `Ok
+  | `Reply of string
   | `Stop of string
   ]
 
@@ -21,8 +19,8 @@ type functions =
 type intercept = payload -> bool
 
 and callbacks =
-  { join : functions -> payload -> answers
-  ; handle_message : functions -> payload -> answers
+  { join : functions -> payload -> answer Lwt.t
+  ; handle_message : functions -> payload -> answer Lwt.t
   ; handle_out : payload -> payload option
   ; terminate : unit -> unit
   }
@@ -180,19 +178,7 @@ let channels channels client =
     | None ->
         Lwt_result.fail "No message received"
   in
-  let process_answers answers =
-    match answers with
-    | [] ->
-        Lwt.return_unit
-    | [ `Reply rep ] ->
-        send_or_disconnect client client_id rep
-    | [ `Stop message ] ->
-        (* TODO test *)
-        log.info (fun log -> log "Stopping %s" message) ;
-        disconnect client_id client
-    | _ ->
-        Lwt.return_unit
-  in
+  let process_answer = function `Ok -> Lwt.return_unit | _ -> Lwt.return_unit in
   let rec loop functions =
     match%lwt receive_and_parse () with
     | Error _error ->
@@ -202,11 +188,14 @@ let channels channels client =
         let%lwt () =
           match (functions, callbacks) with
           | Some functions, Some callbacks ->
-              let%lwt answers = callbacks.handle_message functions payload in
-              process_answers answers
-          | _, None ->
               log.debug (fun log ->
-                  log "received a message, but this client (%i) is not joined" client_id ) ;
+                  log "client: %i is handling the message" client_id ) ;
+              let%lwt answer = callbacks.handle_message functions payload in
+              process_answer answer
+          | _, None ->
+              let (Payload p) = payload in
+              log.debug (fun log ->
+                  log "received a message (%s), but this client (%i) is not joined" p client_id ) ;
               send_or_disconnect
                 client
                 client_id
@@ -267,8 +256,8 @@ let channels channels client =
               }
             in
             Clients.join topic client_id callbacks ;
-            let%lwt answers = callbacks.join functions payload in
-            let%lwt () = process_answers answers in
+            let%lwt answer = callbacks.join functions payload in
+            let%lwt () = process_answer answer in
             loop (Some functions)
         | Error error ->
             log.error (fun log -> log "Could not match topic: %s" error) ;
