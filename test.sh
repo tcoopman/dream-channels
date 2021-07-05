@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
-pkill -f "jest"
+pkill -f "ava-tests"
 killall integration.exe
 esy x dune exec --root . test/integration/integration.exe &
 sleep 1
-node_modules/.bin/jest --forceExit
+npx ava -sv --timeout=1s
