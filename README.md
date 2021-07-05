@@ -11,6 +11,7 @@ The design is highly inspired from Phoenix.
 
 ## TODO
 
+* [ ] handle both string and binary payloads
 * [ ] define protocol
 * [ ] create client library
 * [ ] create a chat example with multiple rooms

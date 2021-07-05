@@ -25,6 +25,15 @@ and callbacks =
   ; terminate : unit -> unit
   }
 
+(** A channel
+
+* topic: the exact topic for this channel, for example: chat:public_room
+* intercept: messages that you send to `broadcast` or `broadcast_from` will be checked if they need to be intercepted.
+  When intercept returns true, every broadcasted message will be send to `handle_out`. Giving it an opportunity to transform
+  the message if wanted
+* create_callbacks: creates the callbacks for the given topic
+
+*)
 type channel = {
   topic: string;
   intercept: intercept;
@@ -32,13 +41,3 @@ type channel = {
 }
 
 val channels : channel list -> Dream.websocket -> unit Lwt.t
-
-(* A channel should have the following:
-
-  * it's for 1 connection based on a topic
-  * it can keep state for 1 connection, for example session data
-  * you have 2 type of messages that need to handled, `join` and `handle_message`, and you can reply
-  * someone should be able to 
-
-
- *)
