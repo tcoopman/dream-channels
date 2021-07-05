@@ -24,6 +24,7 @@ and callbacks =
   { join : functions -> payload -> answers
   ; handle_message : functions -> payload -> answers
   ; handle_out : payload -> payload option
+  ; terminate : unit -> unit
   }
 
 type channel =
@@ -81,9 +82,13 @@ module Clients = struct
                 | None ->
                     None
                 | Some clients ->
-                    Some
-                      (List.filter clients ~f:(fun (c_id, _c, _callbacks) ->
-                           not (Int.equal client_id c_id) ) ) ) )
+                    let removed, keeping =
+                      List.partition_tf clients ~f:(fun (c_id, _c, _callbacks) ->
+                          (Int.equal client_id c_id) )
+                    in
+                    List.hd removed
+                    |> Option.iter ~f:(fun (_c_id, _c, callbacks) -> callbacks.terminate ()) ;
+                    Some keeping ) )
           topics
 
 

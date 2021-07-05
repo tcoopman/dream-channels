@@ -24,6 +24,7 @@ and callbacks =
   { join : functions -> payload -> answers
   ; handle_message : functions -> payload -> answers
   ; handle_out : payload -> payload option
+  ; terminate : unit -> unit
   }
 
 type channel = {
