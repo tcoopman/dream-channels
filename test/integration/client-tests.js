@@ -23,35 +23,41 @@ class TestWs {
   terminate() {
     this.ws.terminate();
   }
+
+  close() {
+    this.ws.close();
+  }
 }
 
 test("joining a chat returns the welcome message", (done) => {
   const ws = new TestWs();
   ws.onMessage((data) => {
-    expect(data).toBe("joined:1|payload:hi");
+    // expect(data).toBe("joined:1|payload:hi");
     ws.terminate();
     done();
   });
 });
 
-test("chat with multiple", (done) => {
+test.only("chat with multiple", (done) => {
   const ws1 = new TestWs();
   const ws2 = new TestWs();
   const ws3 = new TestWs();
 
   ws3.onMessage((data, counter) => {
     if (counter == 1) {
-      expect(data).toBe("joined:1|payload:hi");
+      // expect(data).toBe("joined:1|payload:hi");
       ws3.send("send|chat:1|broadcast");
     }
     if (counter == 2) {
       expect(data).toBe("To everyone in 1");
+      console.log(new Date())
       done();
     }
   });
 });
 
-test("I can join multiple channels", (done) => {
+test.only("I can join multiple channels", (done) => {
+      console.log(new Date())
   const ws = new TestWs();
 
   ws.onMessage((data, counter) => {
@@ -117,6 +123,9 @@ test("keeps working when clients terminate", (done) => {
     }
     if (counter == 2) {
       expect(data).toBe("To everyone in 1");
+      ws.terminate()
+      ws2.terminate()
+      ws3.terminate()
       done();
     }
   });
@@ -169,7 +178,7 @@ test("test broadcast_from", (done) => {
   });
 });
 
-test("test handle_out", (done) => {
+test.skip("test handle_out broadcast", (done) => {
   const ws = new TestWs();
 
   expect.assertions(2);
@@ -177,10 +186,38 @@ test("test handle_out", (done) => {
   ws.onMessage((data, counter) => {
     if (counter == 1) {
       expect(data).toBe("joined:1|payload:hi");
-      send("send|chat:1|transform_out");
+      ws.send("send|chat:1|transform_out_broadcast");
     }
     if (counter == 2) {
       expect(data).toBe("message transformed");
+      ws.terminate();
+      done();
+    }
+  });
+});
+
+test.skip("test handle_out broadcast_from", (done) => {
+  const ws = new TestWs();
+  const ws2 = new TestWs();
+
+  expect.assertions(3);
+
+  ws.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+      setTimeout(() => {
+        ws.send("send|chat:1|transform_out_broadcast_from");
+      }, 20);
+    }
+  });
+  ws2.onMessage((data, counter) => {
+    if (counter == 1) {
+      expect(data).toBe("joined:1|payload:hi");
+    }
+    if (counter == 2) {
+      expect(data).toBe("message transformed");
+      ws.terminate();
+      ws2.terminate();
       done();
     }
   });

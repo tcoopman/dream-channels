@@ -23,19 +23,22 @@ let chat_channel =
                 | WithSubtopic ("chat", chat_id), "broadcast_from" ->
                     let%lwt () = functions.broadcast_from ("To everyone except in " ^ chat_id) in
                     [] |> Lwt.return
-                | WithSubtopic ("chat", _chat_id), "transform_out" ->
-                    let%lwt () = functions.push "transform_out" in
+                | WithSubtopic ("chat", _chat_id), "transform_out_broadcast" ->
+                    let%lwt () = functions.broadcast "transform_out" in
+                    [] |> Lwt.return
+                | WithSubtopic ("chat", _chat_id), "transform_out_broadcast_from" ->
+                    let%lwt () = functions.broadcast_from "transform_out" in
                     [] |> Lwt.return
                 | _ ->
                     [] |> Lwt.return )
-          ; handle_out = (fun (Payload _) -> Payload "message transformed")
+          ; handle_out = (fun (Payload _) -> Some (Payload "message transformed"))
           } )
     }
 
 
 let test_channel =
   Socket.
-    { topic = "chat:*"
+    { topic = "test:*"
     ; intercept = (fun _ -> false)
     ; create_callbacks =
         (fun topic ->
@@ -57,7 +60,7 @@ let test_channel =
                     [] |> Lwt.return
                 | _ ->
                     [] |> Lwt.return )
-          ; handle_out = (fun payload -> payload)
+          ; handle_out = (fun payload -> Some payload)
           } )
     }
 

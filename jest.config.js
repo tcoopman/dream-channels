@@ -5,6 +5,7 @@
 
 module.exports = {
   testMatch: [
-    "**/test/**/*.[jt]s?(x)",
+    "<rootDir>/test/**/*.[jt]s?(x)",
   ],
+  testPathIgnorePatterns: ["<rootDir>/_build/", "<rootDir>/node_modules/"]
 };
