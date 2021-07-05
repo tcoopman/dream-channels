@@ -1,22 +1,16 @@
-type topic =
-  | Topic of string
-  | WithSubtopic of (string * string)
-
-type payload = Payload of string
-
-type answer =
-  [ `Ok
-  | `Reply of string
-  | `Stop of string
-  ]
-
-type functions =
-  { push : string -> unit Lwt.t
-  ; broadcast : string -> unit Lwt.t
-  ; broadcast_from : string -> unit Lwt.t
+type channel =
+  { topic : string
+  ; intercept : intercept
+  ; create_callbacks : topic -> callbacks
   }
 
-type intercept = payload -> bool
+and intercept = payload -> bool
+
+and payload = Payload of string
+
+and topic =
+  | Topic of string
+  | WithSubtopic of (string * string)
 
 and callbacks =
   { join : functions -> payload -> answer Lwt.t
@@ -25,10 +19,16 @@ and callbacks =
   ; terminate : unit -> unit
   }
 
-type channel =
-  { topic : string
-  ; intercept : intercept
-  ; create_callbacks : topic -> callbacks
+and answer =
+  [ `Ok
+  | `Reply of string
+  | `Stop of string
+  ]
+
+and functions =
+  { push : string -> unit Lwt.t
+  ; broadcast : string -> unit Lwt.t
+  ; broadcast_from : string -> unit Lwt.t
   }
 
 open Base
