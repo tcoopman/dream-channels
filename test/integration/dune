@@ -3,7 +3,7 @@
  (libraries
   dream
   lwt
-  channels
+  dream-channels
  )
  (preprocess
   (pps lwt_ppx)))

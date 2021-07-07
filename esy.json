@@ -1,13 +1,16 @@
 {
-  "name": "board-games",
+  "name": "dream-channels",
   "version": "0.1.0",
   "description": "Board Games",
   "license": "MIT",
   "esy": {
-    "buildsInSource": "unsafe",
     "NOTE": "Optional release Section. Customizes result of `esy release`",
     "release": { "bin": [ "App" ] },
-    "buildEnv": { "ODOC_SYNTAX": "re" }
+    "buildEnv": { "ODOC_SYNTAX": "re" },
+    "build": "dune build -p #{self.name}",
+    "install": [
+      "esy-installer $cur__target_dir/default/dream-channels.install"
+    ]
   },
   "scripts": {
     "bin": "esy b dune exec bin/server.bc",

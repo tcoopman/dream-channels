@@ -1,5 +1,6 @@
 (library
- (public_name channels)
+ (name dream_channels)
+ (public_name dream-channels)
  (libraries dream base)
  (inline_tests)
  (preprocess

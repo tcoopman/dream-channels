@@ -1,4 +1,4 @@
-open Channels
+open Dream_channels
 
 let ok () = Lwt.return `Ok
 

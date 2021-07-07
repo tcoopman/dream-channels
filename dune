@@ -3,7 +3,8 @@
   (flags
    (:standard -safe-string -w -30)))
  (release
+  (ocamlopt_flags -O3)
   (flags
-   (:standard -safe-string -O3))))
+   (:standard -safe-string))))
 
 (data_only_dirs _esy esy.lock node_modules)
