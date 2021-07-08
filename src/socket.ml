@@ -192,7 +192,8 @@ let channels channels client =
   in
   let rec loop functions =
     match%lwt receive_and_parse () with
-    | Error _error ->
+    | Error error ->
+        log.debug (fun log -> log "Error in received message: %s" error);
         disconnect client_id client
     | Ok (Send, topic, payload) ->
         let callbacks = Clients.callbacks client_id topic in
