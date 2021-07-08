@@ -1,6 +1,6 @@
 # Dream-Channels
 
-**Status:** very alpha - expect breaking changes!
+**Status:** pre-alpha - will break all the time!
 
 Websocket channel implementation for [dream](https://github.com/aantron/dream) inspired by [Phoenix Channels](https://hexdocs.pm/phoenix/channels.html)
 
@@ -11,9 +11,9 @@ The design is highly inspired from Phoenix.
 
 ## TODO
 
-* [ ] handle both string and binary payloads
 * [ ] define protocol
 * [ ] create client library
+* [ ] handle both string and binary payloads
 * [ ] create a chat example with multiple rooms
 * [ ] documentation
 
