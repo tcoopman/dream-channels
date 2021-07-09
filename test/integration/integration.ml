@@ -6,6 +6,33 @@ let reply answer = Lwt.return (`Reply answer)
 
 let stop reason = Lwt.return (`Stop reason)
 
+let js_client_channel =
+  Socket.
+    { topic = "channel:*"
+    ; intercept = (fun _ -> false)
+    ; create_callbacks =
+        (fun topic ->
+          { join =
+              (fun _functions (Payload payload) ->
+                match topic with
+                | WithSubtopic ("channel", channel_id) ->
+                    reply @@ "reply from channel:" ^ channel_id ^ " - your payload was: " ^ payload
+                | _ ->
+                    stop "invalid topic" )
+          ; handle_message =
+              (fun functions (Payload payload) ->
+                match (topic, payload) with
+                | WithSubtopic ("test", chat_id), "broadcast" ->
+                    let%lwt () = functions.broadcast ("broadcast:" ^ chat_id) in
+                    ok ()
+                | _ ->
+                    ok () )
+          ; handle_out = (fun payload -> Some payload)
+          ; terminate = (fun () -> ())
+          } )
+    }
+
+
 let chat_channel =
   Socket.
     { topic = "chat:*"
@@ -66,7 +93,7 @@ let test_channel =
                     in
                     ok ()
                 | _ ->
-                    stop "invalid topic")
+                    stop "invalid topic" )
           ; handle_message =
               (fun functions (Payload payload) ->
                 match (topic, payload) with
@@ -86,7 +113,8 @@ let () =
   Dream.run ~interface:"0.0.0.0"
   @@ Dream.logger
   @@ Dream.router
-       [ Dream.get "/ws" (fun _ -> Dream.websocket @@ Socket.channels [ chat_channel ])
+       [ Dream.get "/ws" (fun _ ->
+             Dream.websocket @@ Socket.channels [ chat_channel; js_client_channel ] )
        ; Dream.get "/ws2" (fun _ -> Dream.websocket @@ Socket.channels [ test_channel ])
        ]
   @@ Dream.not_found
