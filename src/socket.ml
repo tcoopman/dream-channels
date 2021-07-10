@@ -107,10 +107,6 @@ end
 (* join|topic|payload *)
 (* send|topic|payload *)
 
-type msg_type =
-  | Join
-  | Send
-
 let parse_topic topic =
   match String.split topic ~on:':' with
   | [ topic ] ->
@@ -121,28 +117,6 @@ let parse_topic topic =
       Error ("incorrect topic: " ^ topic)
 
 
-let parse_message message =
-  let splitted = Stdlib.String.trim message |> String.split ~on:'|' in
-  let splitted =
-    match splitted with
-    | [ msg_type; topic; payload ] ->
-        Ok (msg_type, topic, payload)
-    | [ msg_type; topic ] ->
-        Ok (msg_type, topic, "")
-    | _ ->
-        Error ("incorrect message: " ^ message)
-  in
-  Result.bind
-    ~f:(function
-      | "join", topic, payload ->
-          Ok (Join, topic, Payload payload)
-      | "send", topic, payload ->
-          Ok (Send, topic, Payload payload)
-      | _ ->
-          Error "Incorrect message type - expecting join or send" )
-    splitted
-
-
 let disconnect client_id client =
   log.debug (fun log -> log "Disconnecting client %i" client_id) ;
   Clients.disconnect client_id ;
@@ -150,6 +124,7 @@ let disconnect client_id client =
 
 
 let send_or_disconnect client client_id payload =
+  let payload = Reply.encode payload in
   match%lwt send client client_id payload with
   | Ok () ->
       Lwt.return_unit
@@ -173,52 +148,61 @@ let channels channels client =
     match%lwt Dream.receive client with
     | Some message ->
         log.info (fun log -> log "Message received: %s" message) ;
-        parse_message message |> Lwt.return
+        Message.parse message |> Lwt.return
     | None ->
         Lwt_result.fail "No message received"
   in
-  let process_answer topic = function
+  let process_answer topic join_ref ref = function
+    (* TODO: this should have a noreply probably *)
     | `Ok ->
         Lwt.return_unit
     | `Reply message ->
-        send_or_disconnect client client_id message
+        let reply = Reply.{ topic; join_ref; ref; payload = message } in
+        send_or_disconnect client client_id reply
     | `Stop message ->
-        let () =
-          match topic with None -> () | Some topic -> Clients.close_channel client_id topic
-        in
-        send_or_disconnect client client_id message
+        (* TODO: is this the best place to close the channel? *)
+        let () = Clients.close_channel client_id topic in
+        let reply = Reply.{ topic; join_ref; ref; payload = message } in
+        send_or_disconnect client client_id reply
     | _ ->
         Lwt.return_unit
   in
   let rec loop functions =
     match%lwt receive_and_parse () with
     | Error error ->
-        log.debug (fun log -> log "Error in received message: %s" error);
+        log.debug (fun log -> log "Error in received message: %s" error) ;
         disconnect client_id client
-    | Ok (Send, topic, payload) ->
-        let callbacks = Clients.callbacks client_id topic in
+    | Ok ({ message_type = Push; _ } as message) ->
+        let callbacks = Clients.callbacks client_id message.topic in
         let%lwt () =
           match (functions, callbacks) with
           | Some functions, Some callbacks ->
               log.debug (fun log -> log "client: %i is handling the message" client_id) ;
-              let%lwt answer = callbacks.handle_message functions payload in
-              process_answer (Some topic) answer
+              let%lwt answer = callbacks.handle_message functions (Payload message.payload) in
+              process_answer message.topic message.join_ref (Some message.ref) answer
           | _, None ->
-              let (Payload p) = payload in
               log.debug (fun log ->
-                  log "received a message (%s), but this client (%i) is not joined" p client_id ) ;
+                  log
+                    "received a message (%s), but this client (%i) is not joined"
+                    message.payload
+                    client_id ) ;
               send_or_disconnect
                 client
                 client_id
-                "You tried to send to a channel, but you were not joined"
+                Reply.
+                  { topic = message.topic
+                  ; join_ref = message.join_ref
+                  ; ref = None
+                  ; payload = "You tried to send to a channel, but you were not joined"
+                  }
           | None, Some _ ->
               failwith "Invalid state - cannot get here - no functions but send??"
         in
 
         loop functions
-    | Ok (Join, topic, payload) ->
+    | Ok ({ message_type = Join; _ } as message) ->
         let topic_and_channel =
-          parse_topic topic
+          parse_topic message.topic
           |> Result.bind ~f:(fun parsed_topic ->
                  find_channel parsed_topic
                  |> Result.of_option ~error:"Could not find a channel"
@@ -231,31 +215,64 @@ let channels channels client =
               let send_with_handle_out client client_id payload =
                 match callbacks.handle_out (Payload payload) with
                 | Some (Payload payload) ->
-                    send_or_disconnect client client_id payload
+                    let reply =
+                      Reply.
+                        { topic = message.topic; join_ref = message.join_ref; ref = None; payload }
+                    in
+                    send_or_disconnect client client_id reply
                 | None ->
                     Lwt.return_unit
               in
-              { push = send_or_disconnect client client_id
+              { push =
+                  (fun payload ->
+                    let reply =
+                      Reply.
+                        { topic = message.topic
+                        ; join_ref = message.join_ref
+                        ; ref = Some message.ref
+                        ; payload
+                        }
+                    in
+                    send_or_disconnect client client_id reply )
               ; broadcast =
                   (fun payload ->
-                    let string_topic = topic in
                     let send =
                       if channel.intercept (Payload payload)
                       then send_with_handle_out
-                      else send_or_disconnect
+                      else
+                        fun client client_id payload ->
+                        let reply =
+                          Reply.
+                            { topic = message.topic
+                            ; join_ref = message.join_ref
+                            ; ref = None
+                            ; payload
+                            }
+                        in
+
+                        send_or_disconnect client client_id reply
                     in
-                    Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
+                    Clients.iter_p ~topic:message.topic ~f:(fun (c_id, c, _callbacks) ->
                         send c c_id payload ) )
               ; broadcast_from =
                   (fun payload ->
-                    let string_topic = topic in
                     let send =
-                      let () = log.debug (fun log -> log "checking intercept") in
                       if channel.intercept (Payload payload)
                       then send_with_handle_out
-                      else send_or_disconnect
+                      else
+                        fun client client_id payload ->
+                        let reply =
+                          Reply.
+                            { topic = message.topic
+                            ; join_ref = message.join_ref
+                            ; ref = None
+                            ; payload
+                            }
+                        in
+
+                        send_or_disconnect client client_id reply
                     in
-                    Clients.iter_p ~topic:string_topic ~f:(fun (c_id, c, _callbacks) ->
+                    Clients.iter_p ~topic:message.topic ~f:(fun (c_id, c, _callbacks) ->
                         if not (Int.equal client_id c_id)
                         then
                           let () =
@@ -266,13 +283,13 @@ let channels channels client =
                         else Lwt.return_unit ) )
               }
             in
-            Clients.join topic client_id callbacks ;
-            let%lwt answer = callbacks.join functions payload in
-            let%lwt () = process_answer None answer in
+            Clients.join message.topic client_id callbacks ;
+            let%lwt answer = callbacks.join functions (Payload message.payload) in
+            let%lwt () = process_answer message.topic message.join_ref (Some message.ref) answer in
             loop (Some functions)
         | Error error ->
-            log.error (fun log -> log "Could not match topic: %s" error) ;
-            Lwt.return_unit )
+            log.error (fun log -> log "Could not handle message: %s" error) ;
+            Dream.send client "error" )
   in
 
   log.info (fun log -> log "Listening") ;
