@@ -68,6 +68,7 @@ class Channel {
     this.topic = topic;
     this.socket = socket;
     this.joinRef = socket.makeRef();
+    this.bindings = [];
     this.refBindings = {};
   }
 
@@ -83,8 +84,15 @@ class Channel {
     return push;
   }
 
+  /**
+    @private
+  */
   onRef(ref, cb) {
     this.refBindings[ref] = cb;
+  }
+
+  on(cb) {
+    this.bindings.push(msg => cb(msg.payload));
   }
 
   isMember(topic) {
@@ -93,9 +101,12 @@ class Channel {
 
   trigger(data) {
     if (data.ref) {
-      console.log("triggered a data with ref");
-      this.refBindings[data.ref](data);
-      this.refBindings[data.ref] = null;
+      if (this.refBindings[data.ref]) {
+        this.refBindings[data.ref](data);
+        this.refBindings[data.ref] = null;
+      }
+    } else {
+      this.bindings.forEach((cb) => cb(data));
     }
   }
 }
@@ -119,11 +130,12 @@ export class Socket {
     };
     this.webSocket.onmessage = (message) => {
       let data = this.decode(message.data);
-      console.log("Message:", data);
+      // console.log("Message:", data);
       for (let channel of this.channels) {
         if (!channel.isMember(data.topic)) {
           continue;
         }
+        console.log("Trigger channel with: ", data);
         channel.trigger(data);
       }
     };

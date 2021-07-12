@@ -20,9 +20,12 @@ let js_client_channel =
                 | _ ->
                     stop "invalid topic" )
           ; handle_message =
-              (fun _functions (Payload payload) ->
-                match topic with
-                | WithSubtopic ("channel", channel_id) ->
+              (fun functions (Payload payload) ->
+                match (topic, payload) with
+                | WithSubtopic ("channel", channel_id), "broadcast" ->
+                    let%lwt () = functions.broadcast ("broadcast from channel:" ^ channel_id) in
+                    reply @@ "reply on push from channel:" ^ channel_id ^ " - your payload was: " ^ payload
+                | WithSubtopic ("channel", channel_id), _ ->
                     reply @@ "reply on push from channel:" ^ channel_id ^ " - your payload was: " ^ payload
                 | _ ->
                     stop "invalid topic" )
