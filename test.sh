@@ -4,6 +4,6 @@ pkill -f "ava-tests"
 killall integration.exe
 esy x dune exec --root . test/integration/integration.exe &
 sleep 1
-npx ava -v --timeout=1s test/integration/**.js
+npx ava -v --timeout=1s test/integration/js-client-tests.js
 pkill -f "ava-tests"
 killall integration.exe

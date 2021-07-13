@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "watchexec -e .ml,.mli,.js test.sh"
+    "test": "watchexec -w src -w test -w client test.sh"
   },
   "dependencies": {
     "ws": "^7.5.1"
