@@ -112,3 +112,15 @@ test.cb(
     end(t, 200);
   }
 );
+
+test(
+  "cannot join the same channel twice - in phoenix they close the old channel and start the new one",
+  (t) => {
+    const socket = new Socket("ws://localhost:8080/ws");
+
+    const channel1 = socket.channel("channel:1");
+    t.throws(() => {
+      socket.channel("channel:1");
+    }, {instanceOf: Error});
+  }
+);

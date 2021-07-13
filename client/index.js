@@ -92,11 +92,7 @@ class Channel {
   }
 
   on(cb) {
-    this.bindings.push(msg => cb(msg.payload));
-  }
-
-  isMember(topic) {
-    return this.topic === topic;
+    this.bindings.push((msg) => cb(msg.payload));
   }
 
   trigger(data) {
@@ -113,7 +109,7 @@ class Channel {
 
 export class Socket {
   constructor(socketUrl, params) {
-    this.channels = [];
+    this.channels = {};
     this.socketUrl = socketUrl;
     this.params = params;
     this.ref = 0;
@@ -126,24 +122,22 @@ export class Socket {
     this.webSocket.onopen = () => {
       this.isConnected = true;
       this.flushSendBuffer();
-      console.log("WebSocket is open");
     };
     this.webSocket.onmessage = (message) => {
       let data = this.decode(message.data);
-      // console.log("Message:", data);
-      for (let channel of this.channels) {
-        if (!channel.isMember(data.topic)) {
-          continue;
-        }
-        console.log("Trigger channel with: ", data);
+      let channel = this.channelForTopic(data.topic);
+      if (channel) {
         channel.trigger(data);
       }
     };
   }
 
   channel(topic) {
+    if (this.channelForTopic(topic)) {
+      throw new Error(`You've already joined topic ${topic}`);
+    }
     const channel = new Channel(this, topic);
-    this.channels.push(channel);
+    this.channels[topic] = channel;
     return channel;
   }
 
@@ -184,5 +178,12 @@ export class Socket {
       this.sendBuffer.forEach((cb) => cb());
       this.sendBuffer = [];
     }
+  }
+
+  /**
+    @private
+  */
+  channelForTopic(topic) {
+    return this.channels[topic];
   }
 }
