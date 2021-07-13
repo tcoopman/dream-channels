@@ -29,6 +29,19 @@ test.cb(
   }
 );
 
+test.cb("Setup everything before connecting", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName = newChannel();
+
+  const channel = socket.channel(channelName);
+  channel.join("payload").receive((msg) => {
+    t.is(msg, `reply from ${channelName} - your payload was: payload`);
+  });
+  socket.connect();
+  end(t);
+});
+
 test.cb(
   "Connect a channel on a socket - you can wait for the effective connection",
   (t) => {
