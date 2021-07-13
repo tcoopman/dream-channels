@@ -194,3 +194,14 @@ test("cannot join the same channel twice - in phoenix they close the old channel
     { instanceOf: Error }
   );
 });
+
+test.todo("I cannot send to channel that I did not join")
+test.todo("keeps working when clients terminate")
+test.todo("test broadcast_from")
+test.todo("test handle_out broadcast")
+test.todo("test handle_out broadcast_from")
+test.todo("stop on join")
+test.todo("stop on push")
+test.todo("add authentication on a socket");
+test.todo("heartbeat");
+test.todo("reconnecting");
