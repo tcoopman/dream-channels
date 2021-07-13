@@ -59,12 +59,12 @@ module Clients = struct
       client_id
 
 
-  let join topic client_id callbacks =
+  let join topic client_id data =
     Hashtbl.change clients client_id ~f:(function
         | None ->
             None
         | Some (topics, client) ->
-            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client, callbacks) ;
+            Hashtbl.add_multi clients_per_topic ~key:topic ~data:(client_id, client, data) ;
             Some (topic :: topics, client) )
 
 
@@ -74,9 +74,9 @@ module Clients = struct
             None
         | Some clients ->
             let removed, keeping =
-              List.partition_tf clients ~f:(fun (c_id, _c, _callbacks) -> Int.equal client_id c_id)
+              List.partition_tf clients ~f:(fun (c_id, _c, _data) -> Int.equal client_id c_id)
             in
-            List.hd removed |> Option.iter ~f:(fun (_c_id, _c, callbacks) -> callbacks.terminate ()) ;
+            List.hd removed |> Option.iter ~f:(fun (_c_id, _c, (callbacks, _functions)) -> callbacks.terminate ()) ;
             Some keeping )
 
 
@@ -91,10 +91,10 @@ module Clients = struct
 
   let iter_p ~topic ~f = Hashtbl.find_multi clients_per_topic topic |> Lwt_list.iter_p f
 
-  let callbacks client_id topic =
+  let callbacks_and_functions client_id topic =
     Hashtbl.find_multi clients_per_topic topic
-    |> List.find_map ~f:(fun (c_id, _client, callbacks) ->
-           if Int.equal client_id c_id then Some callbacks else None )
+    |> List.find_map ~f:(fun (c_id, _client, callbacks_and_functions) ->
+           if Int.equal client_id c_id then Some callbacks_and_functions else None )
 end
 
 (* module ClientTests = struct *)
@@ -167,20 +167,21 @@ let channels channels client =
     | _ ->
         Lwt.return_unit
   in
-  let rec loop functions =
+  let rec loop () =
     match%lwt receive_and_parse () with
     | Error error ->
         log.debug (fun log -> log "Error in received message: %s" error) ;
         disconnect client_id client
     | Ok ({ message_type = Push; _ } as message) ->
-        let callbacks = Clients.callbacks client_id message.topic in
+        log.debug (fun log -> log "received push with topic %s and payload %s" message.topic message.payload);
+        let callbacks_and_functions = Clients.callbacks_and_functions client_id message.topic in
         let%lwt () =
-          match (functions, callbacks) with
-          | Some functions, Some callbacks ->
+          match (callbacks_and_functions) with
+          | Some (callbacks, functions) ->
               log.debug (fun log -> log "client: %i is handling the message" client_id) ;
               let%lwt answer = callbacks.handle_message functions (Payload message.payload) in
               process_answer message.topic message.join_ref (Some message.ref) answer
-          | _, None ->
+          | None ->
               log.debug (fun log ->
                   log
                     "received a message (%s), but this client (%i) is not joined"
@@ -195,11 +196,9 @@ let channels channels client =
                   ; ref = None
                   ; payload = "You tried to send to a channel, but you were not joined"
                   }
-          | None, Some _ ->
-              failwith "Invalid state - cannot get here - no functions but send??"
         in
 
-        loop functions
+        loop ()
     | Ok ({ message_type = Join; _ } as message) ->
         let topic_and_channel =
           parse_topic message.topic
@@ -212,6 +211,7 @@ let channels channels client =
         | Ok (parsed_topic, channel) ->
             let callbacks = channel.create_callbacks parsed_topic in
             let functions =
+              log.debug (fun log -> log "creating functions for %s" message.topic);
               let send_with_handle_out client client_id payload =
                 match callbacks.handle_out (Payload payload) with
                 | Some (Payload payload) ->
@@ -253,6 +253,7 @@ let channels channels client =
                         send_or_disconnect client client_id reply
                     in
                     Clients.iter_p ~topic:message.topic ~f:(fun (c_id, c, _callbacks) ->
+                      log.debug (fun log -> log "sending broadcast with topic %s" message.topic);
                         send c c_id payload ) )
               ; broadcast_from =
                   (fun payload ->
@@ -283,14 +284,14 @@ let channels channels client =
                         else Lwt.return_unit ) )
               }
             in
-            Clients.join message.topic client_id callbacks ;
+            Clients.join message.topic client_id (callbacks, functions) ;
             let%lwt answer = callbacks.join functions (Payload message.payload) in
             let%lwt () = process_answer message.topic message.join_ref (Some message.ref) answer in
-            loop (Some functions)
+            loop ()
         | Error error ->
             log.error (fun log -> log "Could not handle message: %s" error) ;
             Dream.send client "error" )
   in
 
   log.info (fun log -> log "Listening") ;
-  loop None
+  loop ()

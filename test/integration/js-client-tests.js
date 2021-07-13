@@ -109,18 +109,43 @@ test.cb(
         channel1_2.push("broadcast");
       });
     });
-    end(t, 200);
+    end(t);
   }
 );
 
-test(
-  "cannot join the same channel twice - in phoenix they close the old channel and start the new one",
-  (t) => {
-    const socket = new Socket("ws://localhost:8080/ws");
+test.cb("only the joined channel receives the broadcast", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
 
-    const channel1 = socket.channel("channel:1");
-    t.throws(() => {
+  socket.connect();
+
+  const channel1 = socket.channel("channel:1");
+  const channel2 = socket.channel("channel:2");
+  const channel3 = socket.channel("channel:3");
+  channel1.on((msg) => {
+    t.is(msg, "broadcast from channel:1");
+  });
+  channel2.on((msg) => {
+    t.fail(`${msg}`);
+  });
+  channel1.join("payload channel 1").receive(() => {
+    channel2.join("payload channel 2").receive(() => {
+      channel3.join("payload channel 3").receive(() => {
+        channel1.push("broadcast");
+      });
+    });
+  });
+  end(t);
+});
+
+test("cannot join the same channel twice - in phoenix they close the old channel and start the new one", (t) => {
+  const socket = new Socket("ws://localhost:8080/ws");
+
+  const channel1 = socket.channel("channel:1");
+  t.throws(
+    () => {
       socket.channel("channel:1");
-    }, {instanceOf: Error});
-  }
-);
+    },
+    { instanceOf: Error }
+  );
+});
