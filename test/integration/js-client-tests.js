@@ -158,6 +158,34 @@ test.cb(
   }
 );
 
+test.cb(
+  "broadcast_from is not received on the sending channel",
+  (t) => {
+    t.plan(1);
+    const socket1 = new Socket("ws://localhost:8080/ws");
+    const socket2 = new Socket("ws://localhost:8080/ws");
+    const channelName1 = newChannel();
+
+    socket1.connect();
+    socket2.connect();
+
+    const channel1_1 = socket1.channel(channelName1);
+    const channel1_2 = socket2.channel(channelName1);
+    channel1_1.on((msg) => {
+      t.fail(`didn't expect a message, but got: ${msg}`);
+    });
+    channel1_2.on((msg) => {
+      t.is(msg, `broadcast from ${channelName1}`);
+    });
+    channel1_1.join("payload channel 1").receive(() => {
+      channel1_2.join("payload channel 2").receive(() => {
+        channel1_1.push("broadcast_from");
+      });
+    });
+    end(t);
+  }
+);
+
 test.cb("only the joined channel receives the broadcast", (t) => {
   t.plan(1);
   const socket = new Socket("ws://localhost:8080/ws");

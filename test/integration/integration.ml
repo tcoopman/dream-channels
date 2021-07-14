@@ -24,7 +24,10 @@ let js_client_channel =
                 match (topic, payload) with
                 | WithSubtopic ("channel", channel_id), "broadcast" ->
                     let%lwt () = functions.broadcast ("broadcast from channel:" ^ channel_id) in
-                    reply @@ "reply on push from channel:" ^ channel_id ^ " - your payload was: " ^ payload
+                    ok ()
+                | WithSubtopic ("channel", channel_id), "broadcast_from" ->
+                    let%lwt () = functions.broadcast_from ("broadcast from channel:" ^ channel_id) in
+                    ok ()
                 | WithSubtopic ("channel", channel_id), _ ->
                     reply @@ "reply on push from channel:" ^ channel_id ^ " - your payload was: " ^ payload
                 | _ ->
