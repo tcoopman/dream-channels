@@ -70,15 +70,27 @@ class Channel {
     this.joinRef = socket.makeRef();
     this.bindings = [];
     this.refBindings = {};
+    this.isJoined = false;
   }
 
   join(payload) {
+    if (this.isJoined) {
+      throw new Error(
+        `tried to join multiple times. 'join' can only be called once per channel instance`
+      );
+    }
     let push = new ChannelPush(this, "join", payload);
     push.send();
+    this.isJoined = true;
     return push;
   }
 
   push(payload) {
+    if (!this.isJoined) {
+      throw new Error(
+        `tried to push to '${this.topic}' before joining. Use channel.join(payload) before pushing events`
+      );
+    }
     let push = new ChannelPush(this, "push", payload);
     push.send();
     return push;

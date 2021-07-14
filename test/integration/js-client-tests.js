@@ -195,7 +195,33 @@ test("cannot join the same channel twice - in phoenix they close the old channel
   );
 });
 
-test.todo("I cannot send to channel that I did not join")
+test("cannot join the same channel twice", (t) => {
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName1 = newChannel();
+
+  const channel1 = socket.channel(channelName1);
+  channel1.join("ok");
+  t.throws(
+    () => {
+      channel1.join("will fail");
+    },
+    { instanceOf: Error }
+  );
+});
+
+test("cannot send to a channel that wasn't joined", (t) => {
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName1 = newChannel();
+
+  const channel1 = socket.channel(channelName1);
+  t.throws(
+    () => {
+      channel1.push("will fail");
+    },
+    { instanceOf: Error }
+  );
+});
+
 test.todo("keeps working when clients terminate")
 test.todo("test broadcast_from")
 test.todo("test handle_out broadcast")
