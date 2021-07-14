@@ -76,7 +76,8 @@ module Clients = struct
             let removed, keeping =
               List.partition_tf clients ~f:(fun (c_id, _c, _data) -> Int.equal client_id c_id)
             in
-            List.hd removed |> Option.iter ~f:(fun (_c_id, _c, (callbacks, _functions)) -> callbacks.terminate ()) ;
+            List.hd removed
+            |> Option.iter ~f:(fun (_c_id, _c, (callbacks, _functions)) -> callbacks.terminate ()) ;
             Some keeping )
 
 
@@ -157,12 +158,12 @@ let channels channels client =
     | `Ok ->
         Lwt.return_unit
     | `Reply message ->
-        let reply = Reply.{ topic; join_ref; ref; payload = message } in
+        let reply = Reply.{ event = Reply.Push; topic; join_ref; ref; payload = message } in
         send_or_disconnect client client_id reply
     | `Stop message ->
         (* TODO: is this the best place to close the channel? *)
         let () = Clients.close_channel client_id topic in
-        let reply = Reply.{ topic; join_ref; ref; payload = message } in
+        let reply = Reply.{ event = Reply.Stop; topic; join_ref; ref; payload = message } in
         send_or_disconnect client client_id reply
     | _ ->
         Lwt.return_unit
@@ -173,10 +174,11 @@ let channels channels client =
         log.debug (fun log -> log "Error in received message: %s" error) ;
         disconnect client_id client
     | Ok ({ message_type = Push; _ } as message) ->
-        log.debug (fun log -> log "received push with topic %s and payload %s" message.topic message.payload);
+        log.debug (fun log ->
+            log "received push with topic %s and payload %s" message.topic message.payload ) ;
         let callbacks_and_functions = Clients.callbacks_and_functions client_id message.topic in
         let%lwt () =
-          match (callbacks_and_functions) with
+          match callbacks_and_functions with
           | Some (callbacks, functions) ->
               log.debug (fun log -> log "client: %i is handling the message" client_id) ;
               let%lwt answer = callbacks.handle_message functions (Payload message.payload) in
@@ -191,7 +193,8 @@ let channels channels client =
                 client
                 client_id
                 Reply.
-                  { topic = message.topic
+                  { event = Reply.Push
+                  ; topic = message.topic
                   ; join_ref = message.join_ref
                   ; ref = None
                   ; payload = "You tried to send to a channel, but you were not joined"
@@ -211,13 +214,18 @@ let channels channels client =
         | Ok (parsed_topic, channel) ->
             let callbacks = channel.create_callbacks parsed_topic in
             let functions =
-              log.debug (fun log -> log "creating functions for %s" message.topic);
+              log.debug (fun log -> log "creating functions for %s" message.topic) ;
               let send_with_handle_out client client_id payload =
                 match callbacks.handle_out (Payload payload) with
                 | Some (Payload payload) ->
                     let reply =
                       Reply.
-                        { topic = message.topic; join_ref = message.join_ref; ref = None; payload }
+                        { event = Reply.Push
+                        ; topic = message.topic
+                        ; join_ref = message.join_ref
+                        ; ref = None
+                        ; payload
+                        }
                     in
                     send_or_disconnect client client_id reply
                 | None ->
@@ -227,7 +235,8 @@ let channels channels client =
                   (fun payload ->
                     let reply =
                       Reply.
-                        { topic = message.topic
+                        { event = Reply.Push
+                        ; topic = message.topic
                         ; join_ref = message.join_ref
                         ; ref = Some message.ref
                         ; payload
@@ -243,7 +252,8 @@ let channels channels client =
                         fun client client_id payload ->
                         let reply =
                           Reply.
-                            { topic = message.topic
+                            { event = Reply.Push
+                            ; topic = message.topic
                             ; join_ref = message.join_ref
                             ; ref = None
                             ; payload
@@ -253,7 +263,7 @@ let channels channels client =
                         send_or_disconnect client client_id reply
                     in
                     Clients.iter_p ~topic:message.topic ~f:(fun (c_id, c, _callbacks) ->
-                      log.debug (fun log -> log "sending broadcast with topic %s" message.topic);
+                        log.debug (fun log -> log "sending broadcast with topic %s" message.topic) ;
                         send c c_id payload ) )
               ; broadcast_from =
                   (fun payload ->
@@ -264,7 +274,8 @@ let channels channels client =
                         fun client client_id payload ->
                         let reply =
                           Reply.
-                            { topic = message.topic
+                            { event = Reply.Push
+                            ; topic = message.topic
                             ; join_ref = message.join_ref
                             ; ref = None
                             ; payload

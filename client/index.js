@@ -69,11 +69,22 @@ class Channel {
     this.socket = socket;
     this.joinRef = socket.makeRef();
     this.bindings = [];
+    this.onCloseBindings = [];
     this.refBindings = {};
     this.isJoined = false;
+    this.isClosed = false;
+    this.onClose(() => {
+      this.isClosed = true;
+      this.socket.remove(this);
+    });
   }
 
   join(payload) {
+    if (this.isClosed) {
+      throw new Error(
+        `tried to join a closed channel. Create a new channel with the same topic`
+      );
+    }
     if (this.isJoined) {
       throw new Error(
         `tried to join multiple times. 'join' can only be called once per channel instance`
@@ -86,6 +97,9 @@ class Channel {
   }
 
   push(payload) {
+    if (this.isClosed) {
+      throw new Error(`tried to push to a closed channel`);
+    }
     if (!this.isJoined) {
       throw new Error(
         `tried to push to '${this.topic}' before joining. Use channel.join(payload) before pushing events`
@@ -107,14 +121,22 @@ class Channel {
     this.bindings.push((msg) => cb(msg.payload));
   }
 
+  onClose(cb) {
+    this.onCloseBindings.push((msg) => cb(msg.payload));
+  }
+
   trigger(data) {
-    if (data.ref) {
-      if (this.refBindings[data.ref]) {
-        this.refBindings[data.ref](data);
-        this.refBindings[data.ref] = null;
-      }
+    if (data.event === "stop") {
+      this.onCloseBindings.forEach((cb) => cb(data));
     } else {
-      this.bindings.forEach((cb) => cb(data));
+      if (data.ref) {
+        if (this.refBindings[data.ref]) {
+          this.refBindings[data.ref](data);
+          this.refBindings[data.ref] = null;
+        }
+      } else {
+        this.bindings.forEach((cb) => cb(data));
+      }
     }
   }
 }
@@ -167,14 +189,19 @@ export class Socket {
     }
   }
 
+  remove(channel) {
+    delete this.channels[channel.topic];
+  }
+
   encode(data) {
     let { event, topic, joinRef, ref, payload } = data;
     return `${event}|${topic}|${joinRef}|${ref}|${payload}`;
   }
 
   decode(message) {
-    let [topic, joinRef, ref, payload] = message.split("|");
+    let [event, topic, joinRef, ref, payload] = message.split("|");
     return {
+      event,
       topic,
       joinRef,
       ref,

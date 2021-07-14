@@ -158,33 +158,30 @@ test.cb(
   }
 );
 
-test.cb(
-  "broadcast_from is not received on the sending channel",
-  (t) => {
-    t.plan(1);
-    const socket1 = new Socket("ws://localhost:8080/ws");
-    const socket2 = new Socket("ws://localhost:8080/ws");
-    const channelName1 = newChannel();
+test.cb("broadcast_from is not received on the sending channel", (t) => {
+  t.plan(1);
+  const socket1 = new Socket("ws://localhost:8080/ws");
+  const socket2 = new Socket("ws://localhost:8080/ws");
+  const channelName1 = newChannel();
 
-    socket1.connect();
-    socket2.connect();
+  socket1.connect();
+  socket2.connect();
 
-    const channel1_1 = socket1.channel(channelName1);
-    const channel1_2 = socket2.channel(channelName1);
-    channel1_1.on((msg) => {
-      t.fail(`didn't expect a message, but got: ${msg}`);
+  const channel1_1 = socket1.channel(channelName1);
+  const channel1_2 = socket2.channel(channelName1);
+  channel1_1.on((msg) => {
+    t.fail(`didn't expect a message, but got: ${msg}`);
+  });
+  channel1_2.on((msg) => {
+    t.is(msg, `broadcast from ${channelName1}`);
+  });
+  channel1_1.join("payload channel 1").receive(() => {
+    channel1_2.join("payload channel 2").receive(() => {
+      channel1_1.push("broadcast_from");
     });
-    channel1_2.on((msg) => {
-      t.is(msg, `broadcast from ${channelName1}`);
-    });
-    channel1_1.join("payload channel 1").receive(() => {
-      channel1_2.join("payload channel 2").receive(() => {
-        channel1_1.push("broadcast_from");
-      });
-    });
-    end(t);
-  }
-);
+  });
+  end(t);
+});
 
 test.cb("only the joined channel receives the broadcast", (t) => {
   t.plan(1);
@@ -250,12 +247,112 @@ test("cannot send to a channel that wasn't joined", (t) => {
   );
 });
 
-test.todo("keeps working when clients terminate")
-test.todo("test broadcast_from")
-test.todo("test handle_out broadcast")
-test.todo("test handle_out broadcast_from")
-test.todo("stop on join")
-test.todo("stop on push")
+test.cb("joining can result in a stop", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName = newChannel();
+
+  socket.connect();
+
+  const channel = socket.channel(channelName);
+  channel.onClose((msg) => {
+    t.is(msg, `stopping on join from ${channelName}`);
+  });
+  channel.join("stop").receive((msg) => {
+    t.fail(`incorrectly received message: ${msg}`);
+  });
+  end(t);
+});
+
+test.cb("pushing can result in a stop", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName = newChannel();
+
+  socket.connect();
+
+  const channel = socket.channel(channelName);
+  channel.onClose((msg) => {
+    t.is(msg, `stopping on push from ${channelName}`);
+  });
+  channel.join("ok").receive(() => {
+    channel.push("stop").receive((msg) => {
+      t.fail(`incorrectly received message: ${msg}`);
+    });
+  });
+  end(t);
+});
+
+test.cb("pushing on a stopped channel is not possible", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName = newChannel();
+
+  socket.connect();
+
+  const channel = socket.channel(channelName);
+  channel.onClose((msg) => {
+    t.throws(
+      () => {
+        channel.push("will fail");
+      },
+      { instanceOf: Error }
+    );
+  });
+  channel.join("stop").receive((msg) => {
+    t.fail(`incorrectly received message: ${msg}`);
+  });
+  end(t);
+});
+
+test.cb("after a channel was stopped you still cannot join it again", (t) => {
+  t.plan(1);
+  const socket = new Socket("ws://localhost:8080/ws");
+  const channelName = newChannel();
+
+  socket.connect();
+
+  const channel = socket.channel(channelName);
+  channel.onClose(() => {
+    t.throws(
+      () => {
+        channel.join("will fail");
+      },
+      { instanceOf: Error }
+    );
+  });
+  channel.join("stop").receive((msg) => {
+    t.fail(`incorrectly received message: ${msg}`);
+  });
+  end(t);
+});
+
+test.cb(
+  "after a channel was stopped you can join a new channel with the same topic",
+  (t) => {
+    t.plan(1);
+    const socket = new Socket("ws://localhost:8080/ws");
+    const channelName = newChannel();
+
+    socket.connect();
+
+    const channel = socket.channel(channelName);
+    channel.onClose(() => {
+      const channel = socket.channel(channelName);
+      channel.join("ok").receive(() => {
+        t.pass();
+      });
+    });
+    channel.join("stop").receive((msg) => {
+      t.fail(`incorrectly received message: ${msg}`);
+    });
+    end(t);
+  }
+);
+
+test.todo("keeps working when clients terminate");
+test.todo("test handle_out broadcast");
+test.todo("test handle_out broadcast_from");
 test.todo("add authentication on a socket");
 test.todo("heartbeat");
 test.todo("reconnecting");
