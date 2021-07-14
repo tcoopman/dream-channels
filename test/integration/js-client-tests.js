@@ -350,6 +350,7 @@ test.cb(
   }
 );
 
+test.todo("after a channel was stopped, it will not receive any further messages");
 test.todo("keeps working when clients terminate");
 test.todo("test handle_out broadcast");
 test.todo("test handle_out broadcast_from");
