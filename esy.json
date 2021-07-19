@@ -24,9 +24,11 @@
     "@opam/base": "v0.14.1",
     "@opam/dream": "1.0.0~alpha2",
     "@opam/dune": "^2.8",
+    "@opam/gen_js_api": "1.0.8",
     "@opam/js_of_ocaml": "3.9.0",
     "@opam/lwt": ">= 5.3.0 < 6.0.0",
     "@opam/lwt_ppx": ">= 2.0.0 < 3.0.0",
+    "@opam/ojs": "1.0.8",
     "@opam/ppx_expect": "v0.14.1",
     "ocaml": "4.12.x"
   },

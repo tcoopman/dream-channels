@@ -1,5 +1,5 @@
 {
-  "checksum": "37b366170725371df95ef866ea0636a2",
+  "checksum": "63ca00b384e76f8d6b74f2eb335e8061",
   "root": "dream-channels@link-dev:./esy.json",
   "node": {
     "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#db3a0b63883606dd57c54a7158d560d6cba8cd79@d41d8cd9": {
@@ -91,8 +91,10 @@
       "overrides": [],
       "dependencies": [
         "ocaml@4.12.0@d41d8cd9", "@opam/ppx_expect@opam:v0.14.1@72b3b5e4",
-        "@opam/lwt_ppx@opam:2.0.2@d18729de", "@opam/lwt@opam:5.4.1@37ffbe37",
+        "@opam/ojs@opam:1.0.8@c93c7337", "@opam/lwt_ppx@opam:2.0.2@d18729de",
+        "@opam/lwt@opam:5.4.1@37ffbe37",
         "@opam/js_of_ocaml@opam:3.9.0@db27df96",
+        "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
         "@opam/dune@opam:2.9.0@489e77a9",
         "@opam/dream@opam:1.0.0~alpha2@5b9d18af",
         "@opam/base@opam:v0.14.1@9b424fee"
@@ -1319,6 +1321,31 @@
           "name": "pecu",
           "version": "0.5",
           "path": "esy.lock/opam/pecu.0.5"
+        }
+      },
+      "overrides": [],
+      "dependencies": [
+        "ocaml@4.12.0@d41d8cd9", "@opam/dune@opam:2.9.0@489e77a9",
+        "@esy-ocaml/substs@0.0.1@d41d8cd9"
+      ],
+      "devDependencies": [
+        "ocaml@4.12.0@d41d8cd9", "@opam/dune@opam:2.9.0@489e77a9"
+      ]
+    },
+    "@opam/ojs@opam:1.0.8@c93c7337": {
+      "id": "@opam/ojs@opam:1.0.8@c93c7337",
+      "name": "@opam/ojs",
+      "version": "opam:1.0.8",
+      "source": {
+        "type": "install",
+        "source": [
+          "archive:https://opam.ocaml.org/cache/md5/4e/4e796cdd06f3c7440e9342ff034c14d5#md5:4e796cdd06f3c7440e9342ff034c14d5",
+          "archive:https://github.com/LexiFi/gen_js_api/archive/v1.0.8.tar.gz#md5:4e796cdd06f3c7440e9342ff034c14d5"
+        ],
+        "opam": {
+          "name": "ojs",
+          "version": "1.0.8",
+          "path": "esy.lock/opam/ojs.1.0.8"
         }
       },
       "overrides": [],
@@ -2587,6 +2614,33 @@
         "@opam/seq@opam:base@d8d7de1d", "@opam/rresult@opam:0.6.0@4b185e72",
         "@opam/graphql_parser@opam:0.13.0@c84d3cb6",
         "@opam/dune@opam:2.9.0@489e77a9"
+      ]
+    },
+    "@opam/gen_js_api@opam:1.0.8@a96c6b7d": {
+      "id": "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
+      "name": "@opam/gen_js_api",
+      "version": "opam:1.0.8",
+      "source": {
+        "type": "install",
+        "source": [
+          "archive:https://opam.ocaml.org/cache/md5/4e/4e796cdd06f3c7440e9342ff034c14d5#md5:4e796cdd06f3c7440e9342ff034c14d5",
+          "archive:https://github.com/LexiFi/gen_js_api/archive/v1.0.8.tar.gz#md5:4e796cdd06f3c7440e9342ff034c14d5"
+        ],
+        "opam": {
+          "name": "gen_js_api",
+          "version": "1.0.8",
+          "path": "esy.lock/opam/gen_js_api.1.0.8"
+        }
+      },
+      "overrides": [],
+      "dependencies": [
+        "ocaml@4.12.0@d41d8cd9", "@opam/ppxlib@opam:0.22.2@61009929",
+        "@opam/ojs@opam:1.0.8@c93c7337", "@opam/dune@opam:2.9.0@489e77a9",
+        "@esy-ocaml/substs@0.0.1@d41d8cd9"
+      ],
+      "devDependencies": [
+        "ocaml@4.12.0@d41d8cd9", "@opam/ppxlib@opam:0.22.2@61009929",
+        "@opam/ojs@opam:1.0.8@c93c7337", "@opam/dune@opam:2.9.0@489e77a9"
       ]
     },
     "@opam/fpath@opam:0.7.3@674d8125": {

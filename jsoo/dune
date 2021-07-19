@@ -1,9 +1,9 @@
 (executable
  (name main)
- ; (libraries ojs)
- ; (link_flags -no-check-prims)
- ; (preprocess
- ;  (pps gen_js_api.ppx))
+ (libraries ojs)
+ (link_flags -no-check-prims)
+ (preprocess
+  (pps gen_js_api.ppx))
  (modes js))
 
 ; (rule
@@ -12,12 +12,12 @@
 ;  (action
 ;   (run gen_js_api %{deps})))
 
-; (rule
-;  (targets main.js)
-;  (deps main.bc.js)
-;  (action
-;   (run cp %{deps} %{targets})))
+(rule
+ (targets main.js)
+ (deps main.bc.js)
+ (action
+  (run cp %{deps} %{targets})))
 
-; (alias
-;  (name DEFAULT)
-;  (deps main.js main.html))
+(alias
+ (name DEFAULT)
+ (deps main.js main.html))
