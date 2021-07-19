@@ -1,7 +1,7 @@
 {
   "name": "dream-channels",
   "version": "0.1.0",
-  "description": "Board Games",
+  "description": "Dream Channels",
   "license": "MIT",
   "esy": {
     "NOTE": "Optional release Section. Customizes result of `esy release`",
@@ -24,6 +24,7 @@
     "@opam/base": "v0.14.1",
     "@opam/dream": "1.0.0~alpha2",
     "@opam/dune": "^2.8",
+    "@opam/js_of_ocaml": "3.9.0",
     "@opam/lwt": ">= 5.3.0 < 6.0.0",
     "@opam/lwt_ppx": ">= 2.0.0 < 3.0.0",
     "@opam/ppx_expect": "v0.14.1",
