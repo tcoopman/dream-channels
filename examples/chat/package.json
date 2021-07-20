@@ -1,0 +1,10 @@
+{
+  "name": "chat-example",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Thomas Coopman",
+  "license": "MIT",
+  "dependencies": {
+    "dream-channels": "github:tcoopman/dream-channels"
+  }
+}

@@ -22,7 +22,7 @@
     "build": [
       "dune build --root . client/main.bc.js",
       "mkdir -p static",
-      "cp _build/default/client/main.bc.js static/main.js",
+      //"npx esbuild _build/default/client/main.bc.js --bundle --outfile=static/main.js --platform=node",
       "dune build --root . server/server.exe"
     ]
   },
