@@ -1,5 +1,6 @@
 {
   "name": "dream-channels",
+  "main": "client/index.js",
   "scripts": {
     "test": "watchexec -w src -w test -w client test.sh"
   },
