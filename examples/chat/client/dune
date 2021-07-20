@@ -1,0 +1,8 @@
+(executable
+ (name main)
+ (libraries ocaml-vdom)
+ (link_flags -no-check-prims)
+ (js_of_ocaml (flags --no-inline))
+ (preprocess
+  (pps gen_js_api.ppx))
+ (modes js))

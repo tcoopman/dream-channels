@@ -30,7 +30,7 @@ let view { counters } =
     div
       [ button "-" (`Update (pos, -1)); text (string_of_int value); button "+" (`Update (pos, 1)) ]
   in
-  div (div [ button "Ne couner" `New_counter ] :: (IntMap.bindings counters |> List.map row))
+  div (div [ button "New couner" `New_counter ] :: (IntMap.bindings counters |> List.map row))
 
 
 let app = simple_app ~init ~view ~update ()

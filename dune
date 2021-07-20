@@ -7,4 +7,4 @@
   (flags
    (:standard -safe-string))))
 
-(data_only_dirs _esy esy.lock node_modules)
+(data_only_dirs _esy esy.lock node_modules examples)

@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "@opam/dream": "1.0.0~alpha2",
+    "@opam/dune": "^2.0",
+    "@opam/gen_js_api": "1.0.8",
+    "@opam/js_of_ocaml": "3.9.0",
+    "@opam/ocaml-vdom": "0.2",
+    "ocaml": "4.12.x"
+  },
+  "devDependencies": {
+    "@opam/ocaml-lsp-server": "*",
+    "@opam/ocamlfind-secondary": "*",
+    "@opam/ocamlformat": "0.18.0"
+  },
+  "resolutions": {
+    "@opam/conf-libev": "esy-packages/libev:package.json#0b5eb6685b688649045aceac55dc559f6f21b829"
+  },
+  "esy": {
+    "buildsInSource": "unsafe",
+    "build": [
+      "dune build --root . client/main.bc.js",
+      "mkdir -p static",
+      "cp _build/default/client/main.bc.js static/main.js",
+      "dune build --root . server/server.exe"
+    ]
+  },
+  "scripts": {
+    "start": "dune exec --root . server/server.exe"
+  }
+}
