@@ -1,10 +1,6 @@
-(* This file is part of the ocaml-vdom package, released under the terms of an MIT-like license.     *)
-(* See the attached LICENSE file.                                                                    *)
-(* Copyright 2016 by LexiFi.                                                                         *)
-
-(* Inspired from https://github.com/janestreet/incr_dom/blob/master/example/incr_decr/counters.ml *)
-
 open Vdom
+
+let button ?(a = []) txt f = input [] ~a:(onclick (fun _ -> f) :: type_button :: value txt :: a)
 
 module IntMap = Map.Make (struct
   type t = int
@@ -12,33 +8,47 @@ module IntMap = Map.Make (struct
   let compare : int -> int -> int = compare
 end)
 
-type model = { counters : int IntMap.t }
+type 'msg Vdom.Cmd.t +=
+  | Run of {cb: (('msg -> unit) -> unit)}
 
-let update { counters } = function
-  | `New_counter ->
-      let socket = Ws.Socket.create "ws://localhost:8080/ws" in
-      let () = Ws.Socket.connect socket in
-      { counters = IntMap.add (IntMap.cardinal counters) 0 counters }
-  | `Update (pos, diff) ->
-      { counters = IntMap.add pos (IntMap.find pos counters + diff) counters }
+module ChatChannel = struct
+  type model = {
+    channel: Ws.Channel.t;
+    messages: string list;
+  }
 
+  let init = 
+    let socket = Ws.Socket.create "ws://localhost:8080/ws" in
+    let () = Ws.Socket.connect socket in
+    let channel = Ws.Socket.channel socket "chat:1" in
+    return {channel; messages = []}
 
-let init = { counters = IntMap.empty }
+  let update model = function
+    | `Join -> return model ~c:[Run {cb = (fun sender -> 
+        let push = Ws.Channel.join model.channel "Thomas" in
+        Ws.ChannelPush.receive push (fun msg -> sender (`Joined msg))
+        )}]
+    | `Joined message -> return {model with messages = message :: model.messages}
 
-let button txt msg = input [] ~a:[ onclick (fun _ -> msg); type_button; value txt ]
+  let view model =
+    div [
+      button "Join" `Join;
+      div (List.map (fun message -> text message) model.messages)
+    ]
 
-let view { counters } =
-  let row (pos, value) =
-    div
-      [ button "-" (`Update (pos, -1)); text (string_of_int value); button "+" (`Update (pos, 1)) ]
-  in
-  div (div [ button "New couner" `New_counter ] :: (IntMap.bindings counters |> List.map row))
+  let app = {init; update; view}
+end
 
+  let cmd_handler ctx = function
+    | Run {cb} ->
+        cb (fun x -> Vdom_blit.Cmd.send_msg ctx x);
+        true
+    | _ -> false
 
-let app = simple_app ~init ~view ~update ()
+let () = Vdom_blit.(register (cmd {f = cmd_handler}))
 
 open Js_browser
 
-let run () = Vdom_blit.run app |> Vdom_blit.dom |> Element.append_child (Document.body document)
+let run () = Vdom_blit.run (ChatChannel.app) |> Vdom_blit.dom |> Element.append_child (Document.body document)
 
 let () = Window.set_onload window run

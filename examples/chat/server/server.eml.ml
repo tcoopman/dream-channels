@@ -16,7 +16,7 @@ let chat_channel =
               (fun _functions (Payload payload) ->
                 match (topic, payload) with
                 | WithSubtopic (_, _chat_id), _ ->
-                    ok ()
+                    reply "welcome"
                 | _ ->
                     stop "invalid topic" )
           ; handle_message =
