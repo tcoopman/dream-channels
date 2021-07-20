@@ -1,5 +1,5 @@
 {
-  "checksum": "63ca00b384e76f8d6b74f2eb335e8061",
+  "checksum": "6904be0dabb3af9ae447c7119d4e5234",
   "root": "dream-channels@link-dev:./esy.json",
   "node": {
     "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#db3a0b63883606dd57c54a7158d560d6cba8cd79@d41d8cd9": {
@@ -91,8 +91,9 @@
       "overrides": [],
       "dependencies": [
         "ocaml@4.12.0@d41d8cd9", "@opam/ppx_expect@opam:v0.14.1@72b3b5e4",
-        "@opam/ojs@opam:1.0.8@c93c7337", "@opam/lwt_ppx@opam:2.0.2@d18729de",
-        "@opam/lwt@opam:5.4.1@37ffbe37",
+        "@opam/ojs@opam:1.0.8@c93c7337",
+        "@opam/ocaml-vdom@opam:0.2@362eecfc",
+        "@opam/lwt_ppx@opam:2.0.2@d18729de", "@opam/lwt@opam:5.4.1@37ffbe37",
         "@opam/js_of_ocaml@opam:3.9.0@db27df96",
         "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
         "@opam/dune@opam:2.9.0@489e77a9",
@@ -1610,6 +1611,36 @@
       ],
       "devDependencies": [
         "ocaml@4.12.0@d41d8cd9", "@opam/dune@opam:2.9.0@489e77a9"
+      ]
+    },
+    "@opam/ocaml-vdom@opam:0.2@362eecfc": {
+      "id": "@opam/ocaml-vdom@opam:0.2@362eecfc",
+      "name": "@opam/ocaml-vdom",
+      "version": "opam:0.2",
+      "source": {
+        "type": "install",
+        "source": [
+          "archive:https://opam.ocaml.org/cache/md5/9d/9d23abfd7165df20c802a2c66f1a2120#md5:9d23abfd7165df20c802a2c66f1a2120",
+          "archive:https://github.com/LexiFi/ocaml-vdom/archive/v0.2.tar.gz#md5:9d23abfd7165df20c802a2c66f1a2120"
+        ],
+        "opam": {
+          "name": "ocaml-vdom",
+          "version": "0.2",
+          "path": "esy.lock/opam/ocaml-vdom.0.2"
+        }
+      },
+      "overrides": [],
+      "dependencies": [
+        "ocaml@4.12.0@d41d8cd9",
+        "@opam/js_of_ocaml-compiler@opam:3.9.1@19f5797f",
+        "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
+        "@opam/dune@opam:2.9.0@489e77a9", "@esy-ocaml/substs@0.0.1@d41d8cd9"
+      ],
+      "devDependencies": [
+        "ocaml@4.12.0@d41d8cd9",
+        "@opam/js_of_ocaml-compiler@opam:3.9.1@19f5797f",
+        "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
+        "@opam/dune@opam:2.9.0@489e77a9"
       ]
     },
     "@opam/ocaml-syntax-shims@opam:1.0.0@9f361fbb": {

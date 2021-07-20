@@ -28,6 +28,7 @@
     "@opam/js_of_ocaml": "3.9.0",
     "@opam/lwt": ">= 5.3.0 < 6.0.0",
     "@opam/lwt_ppx": ">= 2.0.0 < 3.0.0",
+    "@opam/ocaml-vdom": "0.2",
     "@opam/ojs": "1.0.8",
     "@opam/ppx_expect": "v0.14.1",
     "ocaml": "4.12.x"
