@@ -9,7 +9,7 @@ module IntMap = Map.Make (struct
 end)
 
 type 'msg Vdom.Cmd.t +=
-  | Run of {cb: (('msg -> unit) -> unit)}
+  | Run of (('msg -> unit) -> unit)
 
 module ChatChannel = struct
   type model = {
@@ -24,10 +24,10 @@ module ChatChannel = struct
     return {channel; messages = []}
 
   let update model = function
-    | `Join -> return model ~c:[Run {cb = (fun sender -> 
+    | `Join -> return model ~c:[Run (fun sender -> 
         let push = Ws.Channel.join model.channel "Thomas" in
         Ws.ChannelPush.receive push (fun msg -> sender (`Joined msg))
-        )}]
+        )]
     | `Joined message -> return {model with messages = message :: model.messages}
 
   let view model =
@@ -40,7 +40,7 @@ module ChatChannel = struct
 end
 
   let cmd_handler ctx = function
-    | Run {cb} ->
+    | Run cb ->
         cb (fun x -> Vdom_blit.Cmd.send_msg ctx x);
         true
     | _ -> false
