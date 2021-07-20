@@ -5,6 +5,7 @@
     "@opam/gen_js_api": "1.0.8",
     "@opam/js_of_ocaml": "3.9.0",
     "@opam/ocaml-vdom": "0.2",
+    "dream-channels": "*",
     "ocaml": "4.12.x"
   },
   "devDependencies": {
@@ -13,6 +14,7 @@
     "@opam/ocamlformat": "0.18.0"
   },
   "resolutions": {
+    "dream-channels": "tcoopman/dream-channels:esy.json#ba02f7c2ace2a10cfa957a06d7337b96854d4ea1",
     "@opam/conf-libev": "esy-packages/libev:package.json#0b5eb6685b688649045aceac55dc559f6f21b829"
   },
   "esy": {

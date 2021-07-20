@@ -1,6 +1,7 @@
 (executable
  (name server)
- (libraries dream))
+ (libraries dream dream-channels)
+ (preprocess (pps lwt_ppx)))
 
 (rule
  (targets server.ml)
