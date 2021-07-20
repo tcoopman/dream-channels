@@ -8,6 +8,9 @@ module[@js.scope "Channels"] Channel : sig
 
   val join : t -> string -> ChannelPush.t [@@js.call]
 
+  val on : t -> (string -> unit) -> unit [@@js.call]
+
+  val push : t -> string -> ChannelPush.t [@@js.call]
 end
 module[@js.scope "Channels"] Socket : sig
   type t = private Ojs.t

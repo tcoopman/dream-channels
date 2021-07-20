@@ -13,16 +13,18 @@ let chat_channel =
     ; create_callbacks =
         (fun topic ->
           { join =
-              (fun _functions (Payload payload) ->
+              (fun functions (Payload payload) ->
                 match (topic, payload) with
                 | WithSubtopic (_, _chat_id), _ ->
+                    let%lwt () = functions.broadcast_from (payload ^ " joined the chat") in
                     reply "welcome"
                 | _ ->
                     stop "invalid topic" )
           ; handle_message =
-              (fun _functions (Payload payload) ->
+              (fun functions (Payload payload) ->
                 match (topic, payload) with
                 | WithSubtopic (_, _chat_id), _ ->
+                    let%lwt () = functions.broadcast payload in
                     ok ()
                 | _ ->
                     stop "invalid topic" )
