@@ -2,7 +2,13 @@
  (name main)
  (libraries ocaml-vdom)
  (link_flags -no-check-prims)
- (js_of_ocaml (flags --no-inline))
+ (js_of_ocaml (javascript_files "./channels.js") (flags --no-inline --disable share --pretty))
  (preprocess
   (pps gen_js_api.ppx))
  (modes js))
+
+(rule
+ (targets ws.ml)
+ (deps ws.mli)
+ (action
+  (run gen_js_api %{deps})))

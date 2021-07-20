@@ -16,6 +16,8 @@ type model = { counters : int IntMap.t }
 
 let update { counters } = function
   | `New_counter ->
+      let socket = Ws.Socket.create "ws://localhost:8080/ws" in
+      let () = Ws.Socket.connect socket in
       { counters = IntMap.add (IntMap.cardinal counters) 0 counters }
   | `Update (pos, diff) ->
       { counters = IntMap.add pos (IntMap.find pos counters + diff) counters }
