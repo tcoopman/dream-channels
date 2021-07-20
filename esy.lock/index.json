@@ -1,5 +1,5 @@
 {
-  "checksum": "6904be0dabb3af9ae447c7119d4e5234",
+  "checksum": "c7d61fec47c4e9b5179be7f41d928c6f",
   "root": "dream-channels@link-dev:./esy.json",
   "node": {
     "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#db3a0b63883606dd57c54a7158d560d6cba8cd79@d41d8cd9": {
@@ -91,11 +91,8 @@
       "overrides": [],
       "dependencies": [
         "ocaml@4.12.0@d41d8cd9", "@opam/ppx_expect@opam:v0.14.1@72b3b5e4",
-        "@opam/ojs@opam:1.0.8@c93c7337",
         "@opam/ocaml-vdom@opam:0.2@362eecfc",
         "@opam/lwt_ppx@opam:2.0.2@d18729de", "@opam/lwt@opam:5.4.1@37ffbe37",
-        "@opam/js_of_ocaml@opam:3.9.0@db27df96",
-        "@opam/gen_js_api@opam:1.0.8@a96c6b7d",
         "@opam/dune@opam:2.9.0@489e77a9",
         "@opam/dream@opam:1.0.0~alpha2@5b9d18af",
         "@opam/base@opam:v0.14.1@9b424fee"
@@ -771,7 +768,6 @@
         "@opam/result@opam:1.5@1c6a6533",
         "@opam/ocamlfind@opam:1.8.1@b7dc3072",
         "@opam/ocamlbuild@opam:0.14.0@6ac75d03",
-        "@opam/js_of_ocaml@opam:3.9.0@db27df96",
         "@esy-ocaml/substs@0.0.1@d41d8cd9"
       ],
       "devDependencies": [
@@ -1885,7 +1881,6 @@
         "ocaml@4.12.0@d41d8cd9", "@opam/topkg@opam:1.0.3@e4e10f1c",
         "@opam/ocamlfind@opam:1.8.1@b7dc3072",
         "@opam/ocamlbuild@opam:0.14.0@6ac75d03",
-        "@opam/js_of_ocaml@opam:3.9.0@db27df96",
         "@esy-ocaml/substs@0.0.1@d41d8cd9"
       ],
       "devDependencies": [ "ocaml@4.12.0@d41d8cd9" ]
@@ -2147,20 +2142,20 @@
         "@opam/dune@opam:2.9.0@489e77a9"
       ]
     },
-    "@opam/magic-mime@opam:1.1.3@b3f714ac": {
-      "id": "@opam/magic-mime@opam:1.1.3@b3f714ac",
+    "@opam/magic-mime@opam:1.2.0@6a509c98": {
+      "id": "@opam/magic-mime@opam:1.2.0@6a509c98",
       "name": "@opam/magic-mime",
-      "version": "opam:1.1.3",
+      "version": "opam:1.2.0",
       "source": {
         "type": "install",
         "source": [
-          "archive:https://opam.ocaml.org/cache/sha256/7f/7fb36ce619ca479ac44ef923c3bf19eda4c98a4428dbf7f3f7c714b516d212f7#sha256:7fb36ce619ca479ac44ef923c3bf19eda4c98a4428dbf7f3f7c714b516d212f7",
-          "archive:https://github.com/mirage/ocaml-magic-mime/releases/download/v1.1.3/magic-mime-v1.1.3.tbz#sha256:7fb36ce619ca479ac44ef923c3bf19eda4c98a4428dbf7f3f7c714b516d212f7"
+          "archive:https://opam.ocaml.org/cache/sha256/f1/f121b67500f8dd97e2fc9fd5d01c7325e4c84bc5c0237442779fbd6fa20694f5#sha256:f121b67500f8dd97e2fc9fd5d01c7325e4c84bc5c0237442779fbd6fa20694f5",
+          "archive:https://github.com/mirage/ocaml-magic-mime/releases/download/v1.2.0/magic-mime-v1.2.0.tbz#sha256:f121b67500f8dd97e2fc9fd5d01c7325e4c84bc5c0237442779fbd6fa20694f5"
         ],
         "opam": {
           "name": "magic-mime",
-          "version": "1.1.3",
-          "path": "esy.lock/opam/magic-mime.1.1.3"
+          "version": "1.2.0",
+          "path": "esy.lock/opam/magic-mime.1.2.0"
         }
       },
       "overrides": [],
@@ -2341,9 +2336,7 @@
         "ocaml@4.12.0@d41d8cd9", "@opam/topkg@opam:1.0.3@e4e10f1c",
         "@opam/ocamlfind@opam:1.8.1@b7dc3072",
         "@opam/ocamlbuild@opam:0.14.0@6ac75d03",
-        "@opam/lwt@opam:5.4.1@37ffbe37",
-        "@opam/js_of_ocaml@opam:3.9.0@db27df96",
-        "@opam/fmt@opam:0.8.9@e0843a5b",
+        "@opam/lwt@opam:5.4.1@37ffbe37", "@opam/fmt@opam:0.8.9@e0843a5b",
         "@opam/cmdliner@opam:1.0.4@93208aac",
         "@opam/base-threads@opam:base@36803084",
         "@esy-ocaml/substs@0.0.1@d41d8cd9"
@@ -2479,36 +2472,6 @@
         "@opam/menhir@opam:20210419@11c42419",
         "@opam/dune@opam:2.9.0@489e77a9",
         "@opam/cmdliner@opam:1.0.4@93208aac"
-      ]
-    },
-    "@opam/js_of_ocaml@opam:3.9.0@db27df96": {
-      "id": "@opam/js_of_ocaml@opam:3.9.0@db27df96",
-      "name": "@opam/js_of_ocaml",
-      "version": "opam:3.9.0",
-      "source": {
-        "type": "install",
-        "source": [
-          "archive:https://opam.ocaml.org/cache/sha256/74/74d3b17b089af04cde29173c9e7a1154b9a784ba415aeef5026440aeb907cb54#sha256:74d3b17b089af04cde29173c9e7a1154b9a784ba415aeef5026440aeb907cb54",
-          "archive:https://github.com/ocsigen/js_of_ocaml/releases/download/3.9.0/js_of_ocaml-3.9.0.tbz#sha256:74d3b17b089af04cde29173c9e7a1154b9a784ba415aeef5026440aeb907cb54"
-        ],
-        "opam": {
-          "name": "js_of_ocaml",
-          "version": "3.9.0",
-          "path": "esy.lock/opam/js_of_ocaml.3.9.0"
-        }
-      },
-      "overrides": [],
-      "dependencies": [
-        "ocaml@4.12.0@d41d8cd9", "@opam/uchar@opam:0.0.2@c8218eea",
-        "@opam/ppxlib@opam:0.22.2@61009929",
-        "@opam/js_of_ocaml-compiler@opam:3.9.1@19f5797f",
-        "@opam/dune@opam:2.9.0@489e77a9", "@esy-ocaml/substs@0.0.1@d41d8cd9"
-      ],
-      "devDependencies": [
-        "ocaml@4.12.0@d41d8cd9", "@opam/uchar@opam:0.0.2@c8218eea",
-        "@opam/ppxlib@opam:0.22.2@61009929",
-        "@opam/js_of_ocaml-compiler@opam:3.9.1@19f5797f",
-        "@opam/dune@opam:2.9.0@489e77a9"
       ]
     },
     "@opam/jane-street-headers@opam:v0.14.0@b38e12bf": {
@@ -3025,7 +2988,7 @@
         "@opam/multipart_form@opam:0.3.0@e2552e92",
         "@opam/mirage-crypto-rng@opam:0.10.2@aed04c2c",
         "@opam/mirage-crypto@opam:0.10.2@c86101c9",
-        "@opam/magic-mime@opam:1.1.3@b3f714ac",
+        "@opam/magic-mime@opam:1.2.0@6a509c98",
         "@opam/lwt_ssl@opam:1.1.3@653af026",
         "@opam/lwt_ppx@opam:2.0.2@d18729de", "@opam/lwt@opam:5.4.1@37ffbe37",
         "@opam/logs@opam:0.7.0@1d03143e", "@opam/hmap@opam:0.8.1@87a77ebe",
@@ -3054,7 +3017,7 @@
         "@opam/multipart_form@opam:0.3.0@e2552e92",
         "@opam/mirage-crypto-rng@opam:0.10.2@aed04c2c",
         "@opam/mirage-crypto@opam:0.10.2@c86101c9",
-        "@opam/magic-mime@opam:1.1.3@b3f714ac",
+        "@opam/magic-mime@opam:1.2.0@6a509c98",
         "@opam/lwt_ssl@opam:1.1.3@653af026",
         "@opam/lwt_ppx@opam:2.0.2@d18729de", "@opam/lwt@opam:5.4.1@37ffbe37",
         "@opam/logs@opam:0.7.0@1d03143e", "@opam/hmap@opam:0.8.1@87a77ebe",
